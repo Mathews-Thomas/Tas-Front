@@ -2,8 +2,8 @@ import React from 'react';
 import { Container, TextField, Button, Grid, MenuItem } from '@mui/material';
 import { useFormik } from 'formik';
 
-const branches = ['Branch 1', 'Branch 2', 'Branch 3']; // Example branches
-const departments = ['Department 1', 'Department 2', 'Department 3']; // Example departments
+const branches = ['Branch 1', 'Branch 2', 'Branch 3','Branch 4']; // Example branches
+const departments = ['Department 1', 'Department 2', 'Department 3','Department 4']; // Example departments
 
 const MedicineForm = ({ onSubmit }) => {
   const formik = useFormik({
