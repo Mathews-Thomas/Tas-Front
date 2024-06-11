@@ -25,8 +25,8 @@ import ReceptionHome from "./Pages/ReceptionPanel/Home";
 import AddDoc from "./Pages/ReviewPanel/Add-Doc";
 import DoctorsList from "./Pages/ReviewPanel/Doctors-List";
 import Addmedicine from "./Pages/ReviewPanel/Addmedicine";
-import MedicineInvoice from "./Pages/ReviewPanel/MedicineInvoice";
-import MedicineDirectory from "./Pages/ReviewPanel/MedicineDirectory";
+import MedicineInvoice from "./components/ReviewPanel/medicine/MedicineInvoice";
+import MedicineDirectory from "./components/ReviewPanel/medicine/MedicineDirectory";
 
 // Review panel
 import ReviewPannelWraper from "./components/ReviewPanel/ReviewPanelWraper";
@@ -97,7 +97,6 @@ function App() {
           <Route path="consolidate-report/" element={<Consolidate_Report />} /> 
           <Route path="settings/" element={<Settings />} />
           <Route path="profile/" element={<Profile />} />
-
           <Route path="help" element={<Wraper value={"Help"} />} />
         </Route>
       </Routes>

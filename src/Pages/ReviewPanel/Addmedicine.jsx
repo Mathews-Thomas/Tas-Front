@@ -1,13 +1,17 @@
 import React from 'react'
-import MedicineForm from "../../components/common/medicine/MedicineForm"
+import MedicineForm from "../../components/ReviewPanel/medicine/MedicineForm"
+import Axios from "../../config/axios"
 const Addmedicine = () => {
-  const handleSubmit = (formValues) => {
-    // This function will handle the form values, e.g., send them to an API
-    console.log('Form submitted with values:', formValues);
-    // Simulate a server request with a timeout
-    setTimeout(() => {
+  const handleSubmit = async (formValues) => {
+    try {
+      // Send form data to the API
+      const response = await Axios.post('medicine/add-medicine', formValues);
+      console.log('Response:', response.data);
       alert('Form submitted successfully!');
-    }, 1000);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('There was an error submitting the form.');
+    }
   };
   return (
     <div className='my-7'>
