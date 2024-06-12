@@ -4,29 +4,42 @@ import { useFormik } from 'formik';
 import Axios from '../../../config/axios';
 
 const MedicineForm = ({ onSubmit }) => {
-  const [branches, setBranches] = useState([]);
   const [mainDepartments, setMainDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
+  const [initialBranchId, setInitialBranchId] = useState('');
+  const [initialBranchName, setInitialBranchName] = useState('');
 
   useEffect(() => {
+    // Retrieve branch data from local storage
+    const storedBranch = localStorage.getItem('branch');
+    if (storedBranch) {
+      const [branchName, branchId] = storedBranch.split(',');
+      setInitialBranchName(branchName);
+      setInitialBranchId(branchId);
+    }
+
     Axios.get('/admin/get-addOns')
       .then((resp) => {
-        const branchOptions = resp?.data?.Branches?.map(branch => ({ option: branch?.branchName, id: branch?._id }));
         const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
           option: Main?.Name,
           id: Main?._id,
           subOption: Main?.BranchID?.branchName,
           BranchID: Main?.BranchID?._id
         }));
-        setBranches(branchOptions);
         setMainDepartments(mainDepartmentsData);
+
+        // Filter departments based on the initialBranchId
+        if (branchId) {
+          const filtered = mainDepartmentsData.filter(dept => dept.BranchID === branchId);
+          setFilteredDepartments(filtered);
+        }
       })
       .catch((err) => {
-        console.error('Error fetching branches and main departments:', err);
+        console.error('Error fetching main departments:', err);
       });
   }, []);
 
-  const { handleSubmit, handleChange, handleReset, values, touched, errors } = useFormik({
+  const { handleSubmit, handleChange, handleReset, values, touched, errors, setFieldValue } = useFormik({
     initialValues: {
       branch: '',
       department: '',
@@ -52,6 +65,12 @@ const MedicineForm = ({ onSubmit }) => {
   });
 
   useEffect(() => {
+    if (initialBranchId) {
+      setFieldValue('branch', initialBranchId);
+    }
+  }, [initialBranchId, setFieldValue]);
+
+  useEffect(() => {
     if (values.branch) {
       const filtered = mainDepartments.filter(dept => dept.BranchID === values.branch);
       setFilteredDepartments(filtered);
@@ -66,24 +85,15 @@ const MedicineForm = ({ onSubmit }) => {
         <Grid container justifyContent="center" spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
-              select
               id="branch"
               name="branch"
               label="Branch"
               variant="outlined"
               fullWidth
               margin="normal"
-              value={values.branch}
-              onChange={handleChange}
-              error={touched.branch && Boolean(errors.branch)}
-              helperText={touched.branch && errors.branch}
-            >
-              {branches.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.option}
-                </MenuItem>
-              ))}
-            </TextField>
+              value={initialBranchName}
+              disabled
+            />
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField

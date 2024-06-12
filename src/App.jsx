@@ -24,9 +24,14 @@ import PatientInvoiceList from "./Pages/ReceptionPanel/PatientInvoiceList";
 import ReceptionHome from "./Pages/ReceptionPanel/Home";
 import AddDoc from "./Pages/ReviewPanel/Add-Doc";
 import DoctorsList from "./Pages/ReviewPanel/Doctors-List";
+
+//Add Medicine Review panel
 import Addmedicine from "./Pages/ReviewPanel/Addmedicine";
 import MedicineInvoice from "./components/ReviewPanel/medicine/MedicineInvoice";
 import MedicineDirectory from "./components/ReviewPanel/medicine/MedicineDirectory";
+
+//Add Medicine Reception panel
+import Add_medicine from "./Pages/ReceptionPanel/Addmedicine";
 
 // Review panel
 import ReviewPannelWraper from "./components/ReviewPanel/ReviewPanelWraper";
@@ -67,8 +72,9 @@ function App() {
           <Route path="Patient-Invoice-list/" element={<PatientInvoiceList />} />
           <Route path="add-Doc/" element={<AddDoc />} />
           <Route path="add-on/" element={<AddOptions />} />
-          <Route path="add-medicine/" element={<Addmedicine/>} />
+          <Route path="add-medicine/" element={<Add_medicine/>} />
           <Route path="medicine-invoice/" element={<MedicineInvoice/>} />
+          <Route path="medicine-directory/" element={<MedicineDirectory/>} />
           <Route path="add-on-list/" element={<ListofOptions />} />
           <Route path="Doctors-list/" element={<DoctorsList />} />
           <Route path="Patient-invoice-report/" element={<Patient_invoice_report />} />  
