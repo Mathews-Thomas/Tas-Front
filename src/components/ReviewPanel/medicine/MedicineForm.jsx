@@ -40,9 +40,31 @@ const MedicineForm = ({ onSubmit }) => {
     },
     validate: (values) => {
       const errors = {};
-      Object.keys(values).forEach(key => {
-        if (!values[key]) errors[key] = 'Required';
-      });
+      if (!values.branch) errors.branch = 'Branch is required';
+      if (!values.department) errors.department = 'Department is required';
+      if (!values.medicineName) errors.medicineName = 'Medicine Name is required';
+      if (!values.category) errors.category = 'Category is required';
+      if (!values.quantity) {
+        errors.quantity = 'Quantity is required';
+      } else if (isNaN(values.quantity) || values.quantity <= 0) {
+        errors.quantity = 'Quantity must be a positive number';
+      }
+      if (!values.strength) {
+        errors.strength = 'Strength is required';
+      }
+      if (!values.price) {
+        errors.price = 'Price is required';
+      } else if (isNaN(values.price) || values.price <= 0) {
+        errors.price = 'Price must be a positive number';
+      }
+      if (!values.batchNumber) {
+        errors.batchNumber = 'Batch Number is required';
+      }
+      if (!values.expirationDate) {
+        errors.expirationDate = 'Expiration Date is required';
+      } else if (new Date(values.expirationDate) <= new Date()) {
+        errors.expirationDate = 'Expiration Date must be in the future';
+      }
       return errors;
     },
     onSubmit: (values, { setSubmitting }) => {

@@ -10,36 +10,73 @@ const MedicineForm = ({ onSubmit }) => {
   const [initialBranchName, setInitialBranchName] = useState('');
 
   useEffect(() => {
-    // Retrieve branch data from local storage
     const storedBranch = localStorage.getItem('branch');
     if (storedBranch) {
       const [branchName, branchId] = storedBranch.split(',');
       setInitialBranchName(branchName);
       setInitialBranchId(branchId);
+
+      Axios.get('/admin/get-addOns')
+        .then((resp) => {
+          const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
+            option: Main?.Name,
+            id: Main?._id,
+            subOption: Main?.BranchID?.branchName,
+            BranchID: Main?.BranchID?._id
+          }));
+          setMainDepartments(mainDepartmentsData);
+
+          if (branchId) {
+            const filtered = mainDepartmentsData.filter(dept => dept.BranchID === branchId);
+            setFilteredDepartments(filtered);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching main departments:', err);
+        });
     }
-
-    Axios.get('/admin/get-addOns')
-      .then((resp) => {
-        const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
-          option: Main?.Name,
-          id: Main?._id,
-          subOption: Main?.BranchID?.branchName,
-          BranchID: Main?.BranchID?._id
-        }));
-        setMainDepartments(mainDepartmentsData);
-
-        // Filter departments based on the initialBranchId
-        if (branchId) {
-          const filtered = mainDepartmentsData.filter(dept => dept.BranchID === branchId);
-          setFilteredDepartments(filtered);
-        }
-      })
-      .catch((err) => {
-        console.error('Error fetching main departments:', err);
-      });
   }, []);
 
-  const { handleSubmit, handleChange, handleReset, values, touched, errors, setFieldValue } = useFormik({
+  const validate = (values) => {
+    const errors = {};
+
+    if (!values.department) {
+      errors.department = 'Required';
+    }
+    if (!values.medicineName) {
+      errors.medicineName = 'Required';
+    } else if (values.medicineName.length < 3) {
+      errors.medicineName = 'Medicine name must be at least 3 characters long';
+    }
+    if (!values.category) {
+      errors.category = 'Required';
+    }
+    if (!values.quantity) {
+      errors.quantity = 'Required';
+    } else if (!/^\d+$/.test(values.quantity)) {
+      errors.quantity = 'Quantity must be a number';
+    }
+    if (!values.strength) {
+      errors.strength = 'Required';
+    }
+    if (!values.price) {
+      errors.price = 'Required';
+    } else if (!/^\d+(\.\d{1,2})?$/.test(values.price)) {
+      errors.price = 'Price must be a valid number';
+    }
+    if (!values.batchNumber) {
+      errors.batchNumber = 'Required';
+    }
+    if (!values.expirationDate) {
+      errors.expirationDate = 'Required';
+    } else if (new Date(values.expirationDate) <= new Date()) {
+      errors.expirationDate = 'Expiration date must be in the future';
+    }
+
+    return errors;
+  };
+
+  const formik = useFormik({
     initialValues: {
       branch: '',
       department: '',
@@ -51,37 +88,30 @@ const MedicineForm = ({ onSubmit }) => {
       batchNumber: '',
       expirationDate: '',
     },
-    validate: (values) => {
-      const errors = {};
-      Object.keys(values).forEach(key => {
-        if (!values[key]) errors[key] = 'Required';
-      });
-      return errors;
-    },
+    validate,
     onSubmit: (values, { setSubmitting }) => {
       onSubmit(values);
+      console.log(values)
       setSubmitting(false);
     },
   });
 
   useEffect(() => {
     if (initialBranchId) {
-      setFieldValue('branch', initialBranchId);
+      formik.setFieldValue('branch', initialBranchId);
     }
-  }, [initialBranchId, setFieldValue]);
+  }, [initialBranchId, formik.setFieldValue]);
 
   useEffect(() => {
-    if (values.branch) {
-      const filtered = mainDepartments.filter(dept => dept.BranchID === values.branch);
+    if (formik.values.branch) {
+      const filtered = mainDepartments.filter(dept => dept.BranchID === formik.values.branch);
       setFilteredDepartments(filtered);
     }
-  }, [values.branch, mainDepartments]);
-
-  const areBranchAndDepartmentSelected = values.branch && values.department;
+  }, [formik.values.branch, mainDepartments]);
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={formik.handleSubmit}>
         <Grid container justifyContent="center" spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
@@ -104,10 +134,10 @@ const MedicineForm = ({ onSubmit }) => {
               variant="outlined"
               fullWidth
               margin="normal"
-              value={values.department}
-              onChange={handleChange}
-              error={touched.department && Boolean(errors.department)}
-              helperText={touched.department && errors.department}
+              value={formik.values.department}
+              onChange={formik.handleChange}
+              error={formik.touched.department && Boolean(formik.errors.department)}
+              helperText={formik.touched.department && formik.errors.department}
             >
               {filteredDepartments.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
@@ -116,7 +146,7 @@ const MedicineForm = ({ onSubmit }) => {
               ))}
             </TextField>
           </Grid>
-          {filteredDepartments.length > 0 && Object.keys(values)
+          {filteredDepartments.length > 0 && Object.keys(formik.values)
             .filter((key) => key !== 'branch' && key !== 'department')
             .map((key) => (
               <Grid item xs={12} sm={6} key={key}>
@@ -127,13 +157,13 @@ const MedicineForm = ({ onSubmit }) => {
                   variant="outlined"
                   fullWidth
                   margin="normal"
-                  value={values[key] || ''}
-                  onChange={handleChange}
-                  error={touched[key] && Boolean(errors[key])}
-                  helperText={touched[key] && errors[key]}
+                  value={formik.values[key] || ''}
+                  onChange={formik.handleChange}
+                  error={formik.touched[key] && Boolean(formik.errors[key])}
+                  helperText={formik.touched[key] && formik.errors[key]}
                   type={key === 'expirationDate' ? 'date' : 'text'}
                   InputLabelProps={key === 'expirationDate' ? { shrink: true } : {}}
-                  disabled={!areBranchAndDepartmentSelected}
+                  
                 />
               </Grid>
             ))}
@@ -142,7 +172,7 @@ const MedicineForm = ({ onSubmit }) => {
           <Grid item>
             <Button
               variant="contained"
-              onClick={handleReset}
+              onClick={formik.handleReset}
               sx={{ bgcolor: 'grey.500', width: '150px', height: '50px' }}
             >
               Cancel
@@ -154,7 +184,6 @@ const MedicineForm = ({ onSubmit }) => {
               variant="contained"
               color="primary"
               sx={{ width: '150px', height: '50px' }}
-              disabled={!areBranchAndDepartmentSelected}
             >
               Submit
             </Button>
