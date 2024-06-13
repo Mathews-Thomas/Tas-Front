@@ -5,7 +5,8 @@ const Addmedicine = () => {
   const handleSubmit = async (formValues) => {
     try {
       // Send form data to the API
-      const response = await Axios.post('medicine/add-medicine', formValues);
+      console.log(formValues,"this is the form values");
+      const response = await Axios.post('admin/medicine/add-medicine', formValues);
       console.log('Response:', response.data);
       alert('Form submitted successfully!');
     } catch (error) {
