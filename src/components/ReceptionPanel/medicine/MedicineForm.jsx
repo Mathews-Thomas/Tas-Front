@@ -108,7 +108,6 @@ const MedicineForm = ({ onSubmit }) => {
               onChange={handleChange}
               error={touched.department && Boolean(errors.department)}
               helperText={touched.department && errors.department}
-              disabled={!values.branch}
             >
               {filteredDepartments.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
