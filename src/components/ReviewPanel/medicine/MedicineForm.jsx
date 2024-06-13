@@ -19,7 +19,9 @@ const MedicineForm = ({ onSubmit }) => {
           BranchID: Main?.BranchID?._id
         }));
         setBranches(branchOptions);
+        console.log(branchOptions)
         setMainDepartments(mainDepartmentsData);
+        console.log(mainDepartmentsData)
       })
       .catch((err) => {
         console.error('Error fetching branches and main departments:', err);
