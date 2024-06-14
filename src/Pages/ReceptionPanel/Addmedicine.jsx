@@ -14,6 +14,7 @@ const Addmedicine = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('There was an error submitting the form.');
+      console.log(error)
     }
   };
   return (
