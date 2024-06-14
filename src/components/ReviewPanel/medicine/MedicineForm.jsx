@@ -28,7 +28,7 @@ const MedicineForm = ({ onSubmit }) => {
       });
   }, []);
 
-  const { handleSubmit, handleChange, handleReset, values, touched, errors } = useFormik({
+  const { handleSubmit, handleChange, handleReset, values, touched, errors ,resetForm} = useFormik({
     initialValues: {
       branch: '',
       department: '',
@@ -53,6 +53,8 @@ const MedicineForm = ({ onSubmit }) => {
       }
       if (!values.strength) {
         errors.strength = 'Strength is required';
+      } else if (isNaN(values.strength) || values.strength <= 0) {
+        errors.strength = 'Strength must be a positive number';
       }
       if (!values.price) {
         errors.price = 'Price is required';
@@ -72,6 +74,7 @@ const MedicineForm = ({ onSubmit }) => {
     onSubmit: (values, { setSubmitting }) => {
       onSubmit(values);
       setSubmitting(false);
+      resetForm()
     },
   });
 
