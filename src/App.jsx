@@ -32,7 +32,7 @@ import MedicineDirectory from "./components/ReviewPanel/medicine/MedicineDirecto
 
 //Add Medicine Reception panel
 import Add_medicine from "./Pages/ReceptionPanel/Addmedicine";
-
+import Medicine_Directory from "./components/ReceptionPanel/medicine/MedicineDirectory"
 // Review panel
 import ReviewPannelWraper from "./components/ReviewPanel/ReviewPanelWraper";
 import ReviewHome from "./Pages/ReviewPanel/Home";
@@ -74,7 +74,7 @@ function App() {
           <Route path="add-on/" element={<AddOptions />} />
           <Route path="add-medicine/" element={<Add_medicine/>} />
           <Route path="medicine-invoice/" element={<MedicineInvoice/>} />
-          <Route path="medicine-directory/" element={<MedicineDirectory/>} />
+          <Route path="medicine-directory/" element={<Medicine_Directory/>} />
           <Route path="add-on-list/" element={<ListofOptions />} />
           <Route path="Doctors-list/" element={<DoctorsList />} />
           <Route path="Patient-invoice-report/" element={<Patient_invoice_report />} />  
