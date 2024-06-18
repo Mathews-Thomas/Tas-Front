@@ -90,9 +90,13 @@ const MedicineForm = ({ onSubmit }) => {
     validate,
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       setSubmitError(''); // Clear previous errors
+      const transformedValues = {
+        ...values,
+        departments: [values.department], 
+      };
       try {
-        await onSubmit(values);
-        console.log(values);
+        await onSubmit(transformedValues);
+        console.log(transformedValues);
         resetForm();
       } catch (error) {
         setSubmitError(error.response?.data?.error || 'Error submitting form');

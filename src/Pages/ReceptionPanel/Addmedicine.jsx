@@ -12,10 +12,14 @@ const Addmedicine = () => {
       console.log('Response:', response.data);
       toast.success('Form submitted successfully!');
     } catch (error) {
-      console.error('Error submitting form:', error);
-      toast.error('There was an error submitting the form.');
-      console.log(error)
-    }
+      // Check if the error has a response and data object
+      const errorMessage = error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : 'There was an error submitting the form.';
+  
+      toast.error(errorMessage);
+  }
+  
   };
   return (
     <div className='my-7'>
