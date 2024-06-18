@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, TextField, Button, Grid, MenuItem } from '@mui/material';
+import { Container, TextField, Button, Grid, MenuItem, Select, InputLabel, FormControl, Checkbox, ListItemText } from '@mui/material';
 import { useFormik } from 'formik';
 import Axios from '../../../config/axios';
 
@@ -26,10 +26,10 @@ const MedicineForm = ({ onSubmit }) => {
       });
   }, []);
 
-  const { handleSubmit, handleChange, handleReset, values, touched, errors } = useFormik({
+  const formik = useFormik({
     initialValues: {
       branch: '',
-      department: '',
+      departments: [],
       medicineName: '',
       category: '',
       quantity: '',
@@ -41,7 +41,7 @@ const MedicineForm = ({ onSubmit }) => {
     validate: (values) => {
       const errors = {};
       if (!values.branch) errors.branch = 'Branch is required';
-      if (!values.department) errors.department = 'Department is required';
+      if (!values.departments || values.departments.length === 0) errors.departments = 'At least one Department is required';
       if (!values.medicineName) errors.medicineName = 'Medicine Name is required';
       if (!values.category) errors.category = 'Category is required';
       if (!values.quantity) {
@@ -51,6 +51,8 @@ const MedicineForm = ({ onSubmit }) => {
       }
       if (!values.strength) {
         errors.strength = 'Strength is required';
+      } else if (isNaN(values.strength) || values.strength <= 0) {
+        errors.strength = 'Strength must be a positive number';
       }
       if (!values.price) {
         errors.price = 'Price is required';
@@ -67,24 +69,25 @@ const MedicineForm = ({ onSubmit }) => {
       }
       return errors;
     },
-    onSubmit: (values, { setSubmitting }) => {
+    onSubmit: (values, { setSubmitting, resetForm }) => {
       onSubmit(values);
       setSubmitting(false);
+      resetForm();
     },
   });
 
   useEffect(() => {
-    if (values.branch) {
-      const filtered = mainDepartments.filter(dept => dept.BranchID === values.branch);
+    if (formik.values.branch) {
+      const filtered = mainDepartments.filter(dept => dept.BranchID === formik.values.branch);
       setFilteredDepartments(filtered);
     }
-  }, [values.branch, mainDepartments]);
+  }, [formik.values.branch, mainDepartments]);
 
-  const areBranchAndDepartmentSelected = values.branch && values.department;
+  const areBranchAndDepartmentSelected = formik.values.branch && formik.values.departments.length > 0;
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={formik.handleSubmit}>
         <Grid container justifyContent="center" spacing={2}>
           <Grid item xs={12} sm={6}>
             <TextField
@@ -95,10 +98,10 @@ const MedicineForm = ({ onSubmit }) => {
               variant="outlined"
               fullWidth
               margin="normal"
-              value={values.branch}
-              onChange={handleChange}
-              error={touched.branch && Boolean(errors.branch)}
-              helperText={touched.branch && errors.branch}
+              value={formik.values.branch}
+              onChange={formik.handleChange}
+              error={formik.touched.branch && Boolean(formik.errors.branch)}
+              helperText={formik.touched.branch && formik.errors.branch}
             >
               {branches.map((option) => (
                 <MenuItem key={option.id} value={option.id}>
@@ -108,29 +111,33 @@ const MedicineForm = ({ onSubmit }) => {
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              id="department"
-              name="department"
-              label="Department"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={values.department}
-              onChange={handleChange}
-              error={touched.department && Boolean(errors.department)}
-              helperText={touched.department && errors.department}
-              disabled={!values.branch}
-            >
-              {filteredDepartments.map((option) => (
-                <MenuItem key={option.id} value={option.id}>
-                  {option.option} {option.subOption}
-                </MenuItem>
-              ))}
-            </TextField>
+            <FormControl fullWidth variant="outlined" margin="normal">
+              <InputLabel id="departments-label">Departments</InputLabel>
+              <Select
+                labelId="departments-label"
+                id="departments"
+                name="departments"
+                multiple
+                value={formik.values.departments}
+                onChange={(event) => formik.setFieldValue('departments', event.target.value)}
+                renderValue={(selected) => selected.map(id => filteredDepartments.find(dep => dep.id === id)?.option).join(', ')}
+                error={formik.touched.departments && Boolean(formik.errors.departments)}
+                label="Departments"
+              >
+                {filteredDepartments.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    <Checkbox checked={formik.values.departments.includes(option.id)} />
+                    <ListItemText primary={`${option.option} (${option.subOption})`} />
+                  </MenuItem>
+                ))}
+              </Select>
+              {formik.touched.departments && formik.errors.departments && (
+                <div style={{ color: 'red', marginTop: '0.5rem' }}>{formik.errors.departments}</div>
+              )}
+            </FormControl>
           </Grid>
-          {filteredDepartments.length > 0 && Object.keys(values)
-            .filter((key) => key !== 'branch' && key !== 'department')
+          {filteredDepartments.length > 0 && Object.keys(formik.values)
+            .filter((key) => key !== 'branch' && key !== 'departments')
             .map((key) => (
               <Grid item xs={12} sm={6} key={key}>
                 <TextField
@@ -140,10 +147,10 @@ const MedicineForm = ({ onSubmit }) => {
                   variant="outlined"
                   fullWidth
                   margin="normal"
-                  value={values[key] || ''}
-                  onChange={handleChange}
-                  error={touched[key] && Boolean(errors[key])}
-                  helperText={touched[key] && errors[key]}
+                  value={formik.values[key] || ''}
+                  onChange={formik.handleChange}
+                  error={formik.touched[key] && Boolean(formik.errors[key])}
+                  helperText={formik.touched[key] && formik.errors[key]}
                   type={key === 'expirationDate' ? 'date' : 'text'}
                   InputLabelProps={key === 'expirationDate' ? { shrink: true } : {}}
                   disabled={!areBranchAndDepartmentSelected}
@@ -155,7 +162,7 @@ const MedicineForm = ({ onSubmit }) => {
           <Grid item>
             <Button
               variant="contained"
-              onClick={handleReset}
+              onClick={formik.handleReset}
               sx={{ bgcolor: 'grey.500', width: '150px', height: '50px' }}
             >
               Cancel

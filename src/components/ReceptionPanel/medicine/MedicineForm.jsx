@@ -1,45 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { Container, TextField, Button, Grid, MenuItem } from '@mui/material';
+import { Container, TextField, Button, Grid, MenuItem, CircularProgress } from '@mui/material';
 import { useFormik } from 'formik';
 import Axios from '../../../config/axios';
+
+// Retrieve branch info from local storage
+const storedBranch = localStorage.getItem('branch');
+const [initialBranchName, initialBranchId] = storedBranch ? storedBranch.split(',') : ['', ''];
 
 const MedicineForm = ({ onSubmit }) => {
   const [mainDepartments, setMainDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
-  const [initialBranchId, setInitialBranchId] = useState('');
-  const [initialBranchName, setInitialBranchName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
-    const storedBranch = localStorage.getItem('branch');
-    if (storedBranch) {
-      const [branchName, branchId] = storedBranch.split(',');
-      setInitialBranchName(branchName);
-      setInitialBranchId(branchId);
+    Axios.get('/admin/get-addOns')
+      .then((resp) => {
+        const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
+          option: Main?.Name,
+          id: Main?._id,
+          subOption: Main?.BranchID?.branchName,
+          BranchID: Main?.BranchID?._id
+        }));
+        setMainDepartments(mainDepartmentsData);
 
-      Axios.get('/admin/get-addOns')
-        .then((resp) => {
-          const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
-            option: Main?.Name,
-            id: Main?._id,
-            subOption: Main?.BranchID?.branchName,
-            BranchID: Main?.BranchID?._id
-          }));
-          setMainDepartments(mainDepartmentsData);
-
-          if (branchId) {
-            const filtered = mainDepartmentsData.filter(dept => dept.BranchID === branchId);
-            setFilteredDepartments(filtered);
-          }
-        })
-        .catch((err) => {
-          console.error('Error fetching main departments:', err);
-        });
-    }
+        if (initialBranchId) {
+          const filtered = mainDepartmentsData.filter(dept => dept.BranchID === initialBranchId);
+          setFilteredDepartments(filtered);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching main departments:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const validate = (values) => {
     const errors = {};
-
     if (!values.department) {
       errors.department = 'Required';
     }
@@ -78,7 +77,7 @@ const MedicineForm = ({ onSubmit }) => {
 
   const formik = useFormik({
     initialValues: {
-      branch: '',
+      branch: initialBranchId,
       department: '',
       medicineName: '',
       category: '',
@@ -89,18 +88,24 @@ const MedicineForm = ({ onSubmit }) => {
       expirationDate: '',
     },
     validate,
-    onSubmit: (values, { setSubmitting }) => {
-      onSubmit(values);
-      console.log(values)
-      setSubmitting(false);
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      setSubmitError(''); // Clear previous errors
+      const transformedValues = {
+        ...values,
+        departments: [values.department], 
+      };
+      try {
+        await onSubmit(transformedValues);
+        console.log(transformedValues);
+        resetForm();
+      } catch (error) {
+        setSubmitError(error.response?.data?.error || 'Error submitting form');
+        console.error('Error submitting form:', error);
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
-
-  useEffect(() => {
-    if (initialBranchId) {
-      formik.setFieldValue('branch', initialBranchId);
-    }
-  }, [initialBranchId, formik.setFieldValue]);
 
   useEffect(() => {
     if (formik.values.branch) {
@@ -108,6 +113,14 @@ const MedicineForm = ({ onSubmit }) => {
       setFilteredDepartments(filtered);
     }
   }, [formik.values.branch, mainDepartments]);
+
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ mt: 5, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
@@ -163,11 +176,17 @@ const MedicineForm = ({ onSubmit }) => {
                   helperText={formik.touched[key] && formik.errors[key]}
                   type={key === 'expirationDate' ? 'date' : 'text'}
                   InputLabelProps={key === 'expirationDate' ? { shrink: true } : {}}
-                  
                 />
               </Grid>
             ))}
         </Grid>
+        {submitError && (
+          <Grid container justifyContent="center" spacing={2} sx={{ mt: 2 }}>
+            <Grid item>
+              <div style={{ color: 'red' }}>{submitError}</div>
+            </Grid>
+          </Grid>
+        )}
         <Grid container justifyContent="center" spacing={2} sx={{ mt: 2 }}>
           <Grid item>
             <Button
@@ -184,6 +203,7 @@ const MedicineForm = ({ onSubmit }) => {
               variant="contained"
               color="primary"
               sx={{ width: '150px', height: '50px' }}
+              disabled={formik.isSubmitting}
             >
               Submit
             </Button>

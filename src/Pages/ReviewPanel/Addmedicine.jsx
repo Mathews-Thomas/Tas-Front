@@ -1,17 +1,19 @@
 import React from 'react'
 import MedicineForm from "../../components/ReviewPanel/medicine/MedicineForm"
 import Axios from "../../config/axios"
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const Addmedicine = () => {
   const handleSubmit = async (formValues) => {
     try {
       // Send form data to the API
-      console.log(formValues,"this is the form values");
+      // console.log(formValues,"this is the form values");
       const response = await Axios.post('admin/medicine/add-medicine', formValues);
       console.log('Response:', response.data);
-      alert('Form submitted successfully!');
+      toast.success("Medicine added sucessfully")
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('There was an error submitting the form.');
+      toast.error("error adding medicine");
     }
   };
   return (

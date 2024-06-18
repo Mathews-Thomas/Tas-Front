@@ -1,17 +1,25 @@
 import React from 'react'
 import MedicineForm from "../../components/ReceptionPanel/medicine/MedicineForm"
 import Axios from "../../config/axios"
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const Addmedicine = () => {
   const handleSubmit = async (formValues) => {
     try {
       // Send form data to the API
       const response = await Axios.post('/medicine/add-medicine', formValues);
       console.log('Response:', response.data);
-      alert('Form submitted successfully!');
+      toast.success('Form submitted successfully!');
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('There was an error submitting the form.');
-    }
+      // Check if the error has a response and data object
+      const errorMessage = error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : 'There was an error submitting the form.';
+  
+      toast.error(errorMessage);
+  }
+  
   };
   return (
     <div className='my-7'>
