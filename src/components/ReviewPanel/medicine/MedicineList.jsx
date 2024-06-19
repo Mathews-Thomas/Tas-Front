@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Axios from "../../../config/axios";
-import { Pagination } from "@mui/material";
-import Table from "./Table"
+import { Pagination, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material";
+import Table from "./Table";
 import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
 
 const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
@@ -11,6 +11,9 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [branch, setBranch] = useState({});
+  const [mainDepartments, setMainDepartments] = useState([]);
+  const [filteredDepartments, setFilteredDepartments] = useState([]);
+  const [selectedMainDepartment, setSelectedMainDepartment] = useState("");
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -19,17 +22,23 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const fetchData = useCallback(async () => {
     if (!branch?.id) return; // Ensure branch ID is present
     try {
-      const response = await Axios.get(`admin/medicine/get-medicine`, {
-        params: { search: searchTerm, page, list , branchId: branch?.id },
+      const response = await Axios.get(`admin/medicine/get-medicine/${branch?.id}`, {
+        params: {
+          search: searchTerm,
+          page,
+          list,
+          DepartmentID : selectedMainDepartment
+        },
       });
       setLoader(false);
       setMedicineList(response.data.medicines);
       setTotalPages(response.data.totalPages);
       console.log(response.data.medicines);
+      console.log(branch?.id);
     } catch (error) {
       console.error("Error fetching medicine list:", error);
     }
-  }, [branch?.id, searchTerm, page, list]);
+  }, [branch?.id, searchTerm, page, list, selectedMainDepartment]);
 
   useEffect(() => {
     if (branch?.id) {
@@ -48,6 +57,32 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [searchTerm, fetchData, refresh, setRefresh]);
 
+  useEffect(() => {
+    Axios.get('/admin/get-addOns')
+      .then((resp) => {
+        const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
+          option: Main?.Name,
+          id: Main?._id,
+          subOption: Main?.BranchID?.branchName,
+          BranchID: Main?.BranchID?._id
+        }));
+        setMainDepartments(mainDepartmentsData);
+      })
+      .catch((err) => {
+        console.error('Error fetching branches and main departments:', err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (branch?.id) {
+      const filtered = mainDepartments.filter(dept => dept.BranchID === branch.id);
+      setFilteredDepartments(filtered);
+      setSelectedMainDepartment(""); // Reset department selection when branch changes
+    } else {
+      setFilteredDepartments([]);
+    }
+  }, [branch, mainDepartments]);
+
   const columns = ["medicineName", "category", "quantity", "price", "createdBy"]; // Adjust as per your data structure
   const tableHeaders = ["Medicine Name", "Category", "Quantity", "Price", "Created By"]; // Adjust as per your data structure
 
@@ -64,9 +99,29 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
             Medicine Directory - {branch?.type}
           </h2>
         </div>
-        <div className="w-full flex justify-end">
+        <div className="w-full flex justify-end items-center">
           <div className="flex gap-5 justify-end items-center w-full">
             <Select_Branch_ID value={branch} onChange={setBranch} />
+            <FormControl variant="outlined" className="w-2/3">
+              <InputLabel id="department-label">Department</InputLabel>
+              <Select
+                labelId="department-label"
+                id="department"
+                value={selectedMainDepartment}
+                onChange={(e) => setSelectedMainDepartment(e.target.value)}
+                label="Department"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {filteredDepartments.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <input
               type="text"
               placeholder="Search medicines..."
