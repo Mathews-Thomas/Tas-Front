@@ -12,8 +12,9 @@ const Addmedicine = () => {
       console.log('Response:', response.data);
       toast.success("Medicine added sucessfully")
     } catch (error) {
+      
       console.error('Error submitting form:', error);
-      toast.error("error adding medicine");
+      toast.error(error.response.data.error);
     }
   };
   return (
