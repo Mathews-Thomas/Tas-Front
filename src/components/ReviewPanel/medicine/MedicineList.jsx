@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Axios from "../../../config/axios";
 import { Pagination } from "@mui/material";
 import Table from "./Table"
+import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
 
 const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const [loader, setLoader] = useState(true);
@@ -9,29 +10,33 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [branch, setBranch] = useState({});
 
   const handlePageChange = (event, value) => {
     setPage(value);
   };
 
   const fetchData = useCallback(async () => {
+    if (!branch?.id) return; // Ensure branch ID is present
     try {
       const response = await Axios.get(`admin/medicine/get-medicine`, {
-        params: { search: searchTerm, page, list },
+        params: { search: searchTerm, page, list , branchId: branch?.id },
       });
       setLoader(false);
-      setMedicineList(response?.data?.medicines);
-      setTotalPages(response?.data?.totalPages);
-      console.log(medicineList)
+      setMedicineList(response.data.medicines);
+      setTotalPages(response.data.totalPages);
+      console.log(response.data.medicines);
     } catch (error) {
       console.error("Error fetching medicine list:", error);
     }
-  }, [searchTerm, page, list]);
+  }, [branch?.id, searchTerm, page, list]);
 
   useEffect(() => {
-    setLoader(true);
-    fetchData();
-  }, [page, list, fetchData]);
+    if (branch?.id) {
+      setLoader(true);
+      fetchData();
+    }
+  }, [branch, page, list, fetchData]);
 
   useEffect(() => {
     if (searchTerm || refresh) {
@@ -43,12 +48,12 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [searchTerm, fetchData, refresh, setRefresh]);
 
-  const columns = ["medicineName", "category", "quantity", "price","createdBy"];  // Adjust as per your data structure
-  const tableHeaders = ["Medicine Name", "Category", "Quantity", "Price","createdBy"];  // Adjust as per your data structure
+  const columns = ["medicineName", "category", "quantity", "price", "createdBy"]; // Adjust as per your data structure
+  const tableHeaders = ["Medicine Name", "Category", "Quantity", "Price", "Created By"]; // Adjust as per your data structure
 
   const endpoints = {
-    update: 'medicine/update-status',  // Adjust the endpoint for updating medicine status
-    approve: 'medicine/approve',  // Adjust the endpoint for approving medicine
+    update: 'medicine/update-status', // Adjust the endpoint for updating medicine status
+    approve: 'medicine/approve', // Adjust the endpoint for approving medicine
   };
 
   return (
@@ -56,11 +61,12 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
       <div className="flex justify-center w-full">
         <div className="flex justify-start w-full items-center">
           <h2 className="text-xl text-center uppercase font-bold py-5">
-            Medicine Directory
+            Medicine Directory - {branch?.type}
           </h2>
         </div>
         <div className="w-full flex justify-end">
           <div className="flex gap-5 justify-end items-center w-full">
+            <Select_Branch_ID value={branch} onChange={setBranch} />
             <input
               type="text"
               placeholder="Search medicines..."
