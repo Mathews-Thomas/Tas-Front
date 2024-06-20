@@ -1,8 +1,10 @@
 import React from 'react'
-
+import MedicineList from './MedicineList';
 const MedicineDirectory = () => {
   return (
-    <div className='text-center text-2xl uppercase my-16 font-semibold'>Medicine Directory</div>
+<div>
+<MedicineList refresh={false} setRefresh={()=>{}} list={10}/>
+</div>
     
   )
 }
