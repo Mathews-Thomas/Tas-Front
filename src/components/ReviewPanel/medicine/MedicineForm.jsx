@@ -85,6 +85,8 @@ const MedicineForm = ({ onSubmit }) => {
 
   const areBranchAndDepartmentSelected = formik.values.branch && formik.values.departments.length > 0;
 
+
+
   return (
     <Container maxWidth="md" sx={{ mt: 5 }}>
       <form onSubmit={formik.handleSubmit}>

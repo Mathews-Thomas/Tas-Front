@@ -48,6 +48,8 @@ const InvoiceTable = ({ data, fetchData ,loader}) => {
     [fetchBranchDetails]
   );
 
+  console.log(selectedRow,"selectedRow");
+
   const handleEditClick = (invoice) => {
     setInvoice(invoice);
     setShowEditModal(true);
