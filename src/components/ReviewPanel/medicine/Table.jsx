@@ -1,7 +1,5 @@
-/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import Axios from "../../../config/axios";
-import DynamicEditModal from "../AddOns/EditModal";
 import Doctorlist_Model from "../DoctorList/Doctor_List_Modal";
 import View_More_Modal from "../../ReviewPanel/commen/View_More_Modal";
 import ProgressBar from "../../common/ProgressBar/ProgressBar";
@@ -22,31 +20,41 @@ function CustomTable({
   const [showModal, setShowModal] = useState(false);
   const [showViewMoreModal, setShowViewMoreModal] = useState(false);
   const [data, setData] = useState(Data);
-  const jobRole = localStorage.getItem("jobRole");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRowData, setSelectedRowData] = useState(null);
   const [selectedViewMoreData, setSelectedViewMoreData] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [jobRole, setJobRole] = useState("");
 
-  const handleToggleChange = (id, currentStatus) => {
-    const newData = data.map((item) =>
-      item._id === id ? { ...item, status: !currentStatus } : item
-    );
-    Axios.put(endpoints.update, { id, status: !currentStatus }).then(() => {
-      setData(newData);
-    });
-    // Here you can also update the status in your backend or global state
+  useEffect(() => {
+    const role = localStorage.getItem("jobRole");
+    setJobRole(role);
+  }, []);
+  // const jobRole = localStorage.getItem("jobRole");
+
+  // status changing logic
+  const handleToggleChange = async (id, currentStatus) => {
+    try {
+      const response = await Axios.put(
+        "/admin/medicine/update-medicine-status",
+        { _id: id, status: !currentStatus }
+      );
+      if (response.status === 200) {
+        setData((prevData) => {
+          const newData = prevData.map((item) => {
+            return item._id === id ? { ...item, status: !currentStatus } : item;
+          });
+          return newData;
+        });
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (err) {
+      console.log("Error updating status", err);
+    }
   };
 
-  const handleApprove = (id) => {
-    const newData = data.map((item) =>
-      item._id === id ? { ...item, isApproved: true, status: true } : item
-    );
-    Axios.put(endpoints.approve, { id }).then(() => {
-      setData(newData);
-    });
-    // Here you can also update the status in your backend or global state
-  };
+  // console.log(data, "this the data");
 
   useEffect(() => {
     setData(Data);
@@ -67,13 +75,14 @@ function CustomTable({
     setSelectedRowData(row);
     openDoctorModal();
   };
+
   const handleViewMoreClick = (row) => {
     setSelectedViewMoreData(row);
     openViewMoreModal();
   };
 
   return (
-    <div className="flex flex-col justify-center  items-center mx-auto ">
+    <div className="flex flex-col justify-center items-center mx-auto">
       {isModalOpen && (
         <MedicineEditForm
           refresh={refresh}
@@ -118,6 +127,11 @@ function CustomTable({
             <th className="px-3 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs">
               Action
             </th>
+            {jobRole === "admin" && (
+              <th className="px-3 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs">
+                Visibility
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="text-sm font-light">
@@ -229,76 +243,38 @@ function CustomTable({
                           />
                         </svg>
                       </button>
-                      {jobRole === "admin" && (
-                        <>
-                          {" "}
-                          <div>
-                            <label
-                              className="flex items-center cursor-pointer"
-                              title={`${!row.status ? "Block" : "UnBlock"}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={row.status}
-                                onChange={() =>
-                                  handleToggleChange(row._id, row.status)
-                                }
-                                className="sr-only"
-                              />
-                              <div
-                                className={`relative toggle w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${
-                                  row.status ? "bg-[#28A745]" : "bg-[#6C757D]"
-                                }`}
-                              >
-                                <span
-                                  className={`absolute right-5 top-1 bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                                    row.status ? "translate-x-full" : ""
-                                  }`}
-                                  style={{
-                                    transform: `translateX(${
-                                      row.status ? "100%" : "0%"
-                                    })`,
-                                  }}
-                                ></span>
-                              </div>
-                            </label>
-                          </div>
-                          <div className="flex">
-                            {typeof row.isApproved !== "undefined" &&
-                              (row.isApproved ? (
-                                <button
-                                  title={`${
-                                    row.isApproved ? "Approved" : "Approve"
-                                  }`}
-                                  className="hover:cursor-default rounded-lg"
-                                >
-                                  <svg
-                                    height="20"
-                                    viewBox="0 0 520 520"
-                                    width="20"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                  >
-                                    <g id="_7-Check" data-name="7-Check">
-                                      <path d="m79.423 240.755a47.529 47.529 0 0 0 -36.737 77.522l120.73 147.894a43.136 43.136 0 0 0 36.066 16.009c14.654-.787 27.884-8.626 36.319-21.515l250.787-403.892c.041-.067.084-.134.128-.2 2.353-3.613 1.59-10.773-3.267-15.271a13.321 13.321 0 0 0 -19.362 1.343q-.135.166-.278.327l-252.922 285.764a10.961 10.961 0 0 1 -15.585.843l-83.94-76.386a47.319 47.319 0 0 0 -31.939-12.438z" />
-                                    </g>
-                                  </svg>
-                                </button>
-                              ) : (
-                                <input
-                                  type="checkbox"
-                                  title={`${
-                                    row.isApproved ? "Approved" : "Approve"
-                                  }`}
-                                  checked={row.isApproved}
-                                  onChange={() => handleApprove(row._id)}
-                                  className="w-6 h-6 hover:cursor-pointer"
-                                />
-                              ))}
-                          </div>{" "}
-                        </>
-                      )}
                     </div>
                   </td>
+                  {jobRole === "admin" && (
+                    <td className="px-3 py-3 border-b border-gray-200">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={row.status}
+                          onChange={() =>
+                            handleToggleChange(row._id, row.status)
+                          }
+                          className="sr-only"
+                        />
+                        <div
+                          className={`relative toggle w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${
+                            row.status ? "bg-[#28A745]" : "bg-[#6C757D]"
+                          }`}
+                        >
+                          <span
+                            className={`absolute right-5 top-1 bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                              row.status ? "translate-x-full" : ""
+                            }`}
+                            style={{
+                              transform: `translateX(${
+                                row.status ? "100%" : "0%"
+                              })`,
+                            }}
+                          ></span>
+                        </div>
+                      </label>
+                    </td>
+                  )}
                 </tr>
               ))}
             </>
