@@ -19,6 +19,8 @@ const PatientList = ({ refresh, setRefresh, list = 10 }) => {
     setPage(value);
   };
 
+  
+
   const fetchData = useCallback(async () => {
     if (!branch?.id) return;
     try {
