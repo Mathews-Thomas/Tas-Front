@@ -102,7 +102,7 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
         <div className="w-full flex justify-end items-center">
           <div className="flex gap-5 justify-end items-center w-full">
             <Select_Branch_ID value={branch} onChange={setBranch} />
-            <FormControl variant="outlined" className="w-2/3">
+            <FormControl variant="outlined" className='w-[25rem]'>
               <InputLabel id="department-label">Department</InputLabel>
               <Select
                 labelId="department-label"
@@ -127,7 +127,7 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
               placeholder="Search medicines..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="p-[0.965rem] border w-[50%] border-gray-300 rounded mt-2 focus:outline-none focus:border-gray-300"
+              className=" p-[0.965rem] border w-[50%] border-gray-300 rounded mt-2 focus:outline-none focus:border-gray-300"
             />
           </div>
         </div>

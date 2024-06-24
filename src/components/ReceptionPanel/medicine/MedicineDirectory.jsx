@@ -5,7 +5,6 @@ const MedicineDirectory = () => {
 <div>
 <MedicineList refresh={false} setRefresh={()=>{}} list={10}/>
 </div>
-    
   )
 }
 
