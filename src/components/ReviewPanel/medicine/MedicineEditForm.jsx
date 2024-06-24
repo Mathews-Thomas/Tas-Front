@@ -19,8 +19,8 @@ import Axios from "../../../config/axios";
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -64,10 +64,7 @@ const MedicineEditForm = ({
     setFormData(initialData);
   }, [initialData]);
 
-  
- 
-
-  // form data extraction 
+  // form data extraction
   const extractFormDataValues = (formData) => ({
     branch: formData.branch.id || "",
     departments: formData.departments || [],
@@ -77,12 +74,12 @@ const MedicineEditForm = ({
     strength: formData.strength || "",
     price: formData.price || "",
     batchNumber: formData.batchNumber || "",
-    expirationDate: formData.expirationDate ? formatDate(formData.expirationDate) : "",
+    expirationDate: formData.expirationDate
+      ? formatDate(formData.expirationDate)
+      : "",
     approved: formData.approved || "",
     _id: formData._id || "",
   });
-
-  
 
   const formik = useFormik({
     initialValues: {
@@ -136,16 +133,14 @@ const MedicineEditForm = ({
         console.log(values);
         await Axios.put("/admin/medicine/edit-medicine", values);
         console.log("Form data updated successfully");
-        console.log(values,"the sumbitted values");
+        console.log(values, "the sumbitted values");
         setSubmitting(false);
         resetForm();
         onClose();
         refresh();
-      } catch(error) {
+      } catch (error) {
         console.error("Error updating form data:", error);
       }
-      
-     
     },
   });
 
@@ -156,11 +151,11 @@ const MedicineEditForm = ({
     }
   }, [formData]);
 
-//  cancel function
-const handleCancel = () => {
-  formik.handleReset(); // Reset the form using Formik's handleReset
-  onClose(); // Close the modal
-};
+  //  cancel function
+  const handleCancel = () => {
+    formik.handleReset(); // Reset the form using Formik's handleReset
+    onClose(); // Close the modal
+  };
 
   useEffect(() => {
     if (formik.values.branch) {
@@ -174,8 +169,8 @@ const handleCancel = () => {
   const areBranchAndDepartmentSelected =
     formik.values.branch && formik.values.departments.length > 0;
 
+  console.log(filteredDepartments, "filteredDepartments");
 
- 
   return (
     <>
       <Container maxWidth="md" sx={{ mt: 5 }}>
@@ -210,10 +205,16 @@ const handleCancel = () => {
                   id="departments"
                   name="departments"
                   multiple
-                  value={formik.values.departments.map(department => department.id)}
+                  value={formik.values.departments.map(
+                    (department) => department.id
+                  )}
                   onChange={(event) => {
                     const selectedIds = event.target.value;
-                    const selectedDepartments = selectedIds.map(id => filteredDepartments.find(dep => dep.id === id));
+                    const selectedDepartments = selectedIds
+                      .map((id) =>
+                        filteredDepartments.find((dep) => dep.id === id)
+                      )
+                      .filter((dep) => dep); // Filter out undefined values
                     formik.setFieldValue("departments", selectedDepartments);
                   }}
                   renderValue={(selected) =>
@@ -234,7 +235,9 @@ const handleCancel = () => {
                   {filteredDepartments.map((option) => (
                     <MenuItem key={option.id} value={option.id}>
                       <Checkbox
-                        checked={formik.values.departments.includes(option.id)}
+                        checked={formik.values.departments.some(
+                          (dep) => dep.id === option.id
+                        )}
                       />
                       <ListItemText
                         primary={`${option.option} (${option.subOption})`}
@@ -251,7 +254,10 @@ const handleCancel = () => {
             </Grid>
             {filteredDepartments.length > 0 &&
               Object.keys(formik.values)
-                .filter((key) => key !== "branch" && key !== "departments" && key !== '_id')
+                .filter(
+                  (key) =>
+                    key !== "branch" && key !== "departments" && key !== "_id"
+                )
                 .map((key) => (
                   <Grid item xs={12} sm={6} key={key}>
                     <TextField
@@ -273,7 +279,6 @@ const handleCancel = () => {
                       }
                       disabled={!areBranchAndDepartmentSelected}
                     />
-                    
                   </Grid>
                 ))}
           </Grid>
