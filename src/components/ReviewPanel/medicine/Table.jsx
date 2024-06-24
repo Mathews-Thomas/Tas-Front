@@ -57,8 +57,15 @@ function CustomTable({
   // console.log(data, "this the data");
 
   useEffect(() => {
-    setData(Data);
-  }, [Data]);
+    if (jobRole) {
+      if (jobRole === 'admin') {
+        setData(Data);
+      } else {
+        const filteredData = Data.filter(item => item.status === true);
+        setData(filteredData);
+      }
+    }
+  }, [jobRole, Data]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
