@@ -137,7 +137,7 @@ const MedicineEditForm = ({
         setSubmitting(false);
         resetForm();
         onClose();
-        refresh();
+       
       } catch (error) {
         console.error("Error updating form data:", error);
       }
