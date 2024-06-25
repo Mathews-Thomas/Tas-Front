@@ -180,7 +180,7 @@ const MedicineEditForm = ({
   const areBranchAndDepartmentSelected =
     formik.values.branch && formik.values.departments.length > 0;
 
-  console.log(filteredDepartments, "filteredDepartments");
+  // console.log(filteredDepartments, "filteredDepartments");
 
   return (
     <>

@@ -58,7 +58,7 @@ function CustomTable({
       if (jobRole === 'admin') {
         setData(Data);
       } else {
-        const filteredData = Data.filter(item => item.status === true);
+        const filteredData = Data.filter(item => item.status === true && item.approved === true);
         setData(filteredData);
       }
     }
