@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   Container,
   TextField,
@@ -10,6 +12,10 @@ import {
   FormControl,
   Checkbox,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 import { useFormik } from "formik";
@@ -121,6 +127,9 @@ const MedicineEditForm = ({
       if (!values.batchNumber) {
         errors.batchNumber = "Batch Number is required";
       }
+      if (!values.approved) {
+        errors.approved = "Value is required";
+      }
       if (!values.expirationDate) {
         errors.expirationDate = "Expiration Date is required";
       } else if (new Date(values.expirationDate) <= new Date()) {
@@ -133,6 +142,7 @@ const MedicineEditForm = ({
         console.log(values);
         await Axios.put("/admin/medicine/edit-medicine", values);
         console.log("Form data updated successfully");
+        toast.success("Medicine updated sucessfully")
         console.log(values, "the sumbitted values");
         setSubmitting(false);
         resetForm();
@@ -140,6 +150,7 @@ const MedicineEditForm = ({
        
       } catch (error) {
         console.error("Error updating form data:", error);
+        toast.error(error)
       }
     },
   });
@@ -173,6 +184,9 @@ const MedicineEditForm = ({
 
   return (
     <>
+     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+     <DialogTitle>Edit Medicine</DialogTitle>
+     <DialogContent>
       <Container maxWidth="md" sx={{ mt: 5 }}>
         <form onSubmit={formik.handleSubmit}>
           <Grid container justifyContent="center" spacing={2}>
@@ -260,28 +274,53 @@ const MedicineEditForm = ({
                 )
                 .map((key) => (
                   <Grid item xs={12} sm={6} key={key}>
-                    <TextField
-                      id={key}
-                      name={key}
-                      label={key
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/^./, (str) => str.toUpperCase())}
-                      variant="outlined"
-                      fullWidth
-                      margin="normal"
-                      value={formik.values[key] || ""}
-                      onChange={formik.handleChange}
-                      error={formik.touched[key] && Boolean(formik.errors[key])}
-                      helperText={formik.touched[key] && formik.errors[key]}
-                      type={key === "expirationDate" ? "date" : "text"}
-                      InputLabelProps={
-                        key === "expirationDate" ? { shrink: true } : {}
-                      }
-                      disabled={!areBranchAndDepartmentSelected}
-                    />
+                    {key === "approved" ? (
+                      <FormControl variant="outlined" fullWidth margin="normal">
+                        <InputLabel id="approved-label">Approved</InputLabel>
+                        <Select
+                          labelId="approved-label"
+                          id="approved"
+                          name="approved"
+                          value={formik.values.approved}
+                          onChange={formik.handleChange}
+                          label="Approved"
+                          error={formik.touched.approved && Boolean(formik.errors.approved)}
+                          disabled={formik.values.approved === "true"} 
+                        >
+                          <MenuItem value="true">true</MenuItem>
+                          <MenuItem value="false">false</MenuItem>
+                        </Select>
+                        {formik.touched.approved && formik.errors.approved && (
+                          <div style={{ color: "red", marginTop: "0.5rem" }}>
+                            {formik.errors.approved}
+                          </div>
+                        )}
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        id={key}
+                        name={key}
+                        label={key
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/^./, (str) => str.toUpperCase())}
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={formik.values[key] || ""}
+                        onChange={formik.handleChange}
+                        error={formik.touched[key] && Boolean(formik.errors[key])}
+                        helperText={formik.touched[key] && formik.errors[key]}
+                        type={key === "expirationDate" ? "date" : "text"}
+                        InputLabelProps={
+                          key === "expirationDate" ? { shrink: true } : {}
+                        }
+                        disabled={!areBranchAndDepartmentSelected}
+                      />
+                    )}
                   </Grid>
                 ))}
           </Grid>
+         
           <Grid container justifyContent="center" spacing={2} sx={{ mt: 2 }}>
             <Grid item>
               <Button
@@ -306,6 +345,8 @@ const MedicineEditForm = ({
           </Grid>
         </form>
       </Container>
+      </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -30,8 +30,7 @@ function CustomTable({
     const role = localStorage.getItem("jobRole");
     setJobRole(role);
   }, []);
-  // const jobRole = localStorage.getItem("jobRole");
-
+  
   // status changing logic
   const handleToggleChange = async (id, currentStatus) => {
     try {
@@ -53,8 +52,6 @@ function CustomTable({
       console.log("Error updating status", err);
     }
   };
-
-  // console.log(data, "this the data");
 
   useEffect(() => {
     if (jobRole) {
@@ -131,6 +128,11 @@ function CustomTable({
                 {Head}
               </th>
             ))}
+             {jobRole === "admin" && (
+              <th className="px-3 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs">
+                Approval
+              </th>
+            )}
             <th className="px-3 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs">
               Action
             </th>
@@ -175,13 +177,43 @@ function CustomTable({
                       key={colIndex}
                       className="px-3 py-3 border-b border-gray-200 cursor-pointer"
                     >
-                      {column === "isApproved"
-                        ? row[column]
-                          ? "Approved"
-                          : "Not Approved"
-                        : row[column]}
+                      {row[column]}
                     </td>
                   ))}
+                    {jobRole === "admin" && (
+                  <td className="px-3 py-3 border-b border-gray-200">
+                    {row.approved ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="green"
+                        className="w-6 h-6 flex"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="red"
+                        className="w-6 h-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    )}
+                  </td>)}
                   <td className="px-3 py-3 border-b border-gray-200">
                     <div className="flex flex-col items-center lg:flex-row gap-4">
                       {(selectedTable === "Doctors" ||
@@ -220,13 +252,48 @@ function CustomTable({
                             <g>
                               <g>
                                 <path
-                                  d="M455.936,215.296c-25.088-31.232-114.688-133.12-225.28-133.12S30.464,184.064,5.376,215.296
-                        c-7.168,8.704-7.168,21.504,0,30.72c25.088,31.232,114.688,133.12,225.28,133.12s200.192-101.888,225.28-133.12
-                        C463.104,237.312,463.104,224.512,455.936,215.296z M230.656,338.176c-59.392,0-107.52-48.128-107.52-107.52
-                        s48.128-107.52,107.52-107.52s107.52,48.128,107.52,107.52S290.048,338.176,230.656,338.176z"
+                                  d="M230.656,0C103.424,0,0,103.424,0,230.656s103.424,230.656,230.656,230.656s230.656-103.424,230.656-230.656
+                        S357.888,0,230.656,0z M230.656,421.888c-105.984,0-191.232-85.248-191.232-191.232S124.672,39.424,230.656,39.424
+                        s191.232,85.248,191.232,191.232S336.64,421.888,230.656,421.888z"
                                 />
                               </g>
                             </g>
+                          </svg>
+                        </div>
+                      )}
+                      {(selectedTable === "Category" ||
+                        selectedTable === "Sub Department" ||
+                        selectedTable === "Medicine") && (
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => handleViewMoreClick(row)}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width={30}
+                            height={30}
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="css-i6dzq1"
+                          >
+                            <circle cx={12} cy={12} r={10} />
+                            <line x1={12} y1={16} x2={12} y2={12} />
+                            <line x1={12} y1={8} x2="12.01" y2={8} />
+                          </svg>
+                        </div>
+                      )}
+                      {selectedTable === "Main Department" && (
+                        <div className="cursor-pointer">
+                          <svg
+                            height={20}
+                            viewBox="0 0 20 20"
+                            width={20}
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M10 15l-5.4-5.4c-.5-.5-.5-1.3 0-1.8s1.3-.5 1.8 0L10 11.4l3.6-3.6c.5-.5 1.3-.5 1.8 0s.5 1.3 0 1.8L10 15z" />
                           </svg>
                         </div>
                       )}
@@ -281,8 +348,9 @@ function CustomTable({
                         </div>
                       </label>
                     </td>
+                    
                   )}
-                </tr>
+                </tr>    
               ))}
             </>
           )}
