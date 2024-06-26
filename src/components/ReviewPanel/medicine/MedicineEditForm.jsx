@@ -70,6 +70,8 @@ const MedicineEditForm = ({
     setFormData(initialData);
   }, [initialData]);
 
+  // console.log(initialData);
+
   // form data extraction
   const extractFormDataValues = (formData) => ({
     branch: formData.branch.id || "",
@@ -161,6 +163,7 @@ const MedicineEditForm = ({
       formik.setValues(extractedValues);
     }
   }, [formData]);
+ // console.log(extractFormDataValues(formData));
 
   //  cancel function
   const handleCancel = () => {

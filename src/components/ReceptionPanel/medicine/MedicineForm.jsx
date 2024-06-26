@@ -78,7 +78,7 @@ const MedicineForm = ({ onSubmit }) => {
   const formik = useFormik({
     initialValues: {
       branch: initialBranchId,
-      department: '',
+      department: [],
       medicineName: '',
       category: '',
       quantity: '',
@@ -93,7 +93,9 @@ const MedicineForm = ({ onSubmit }) => {
       const transformedValues = {
         ...values,
         departments: [values.department], 
+
       };
+      // delete transformedValues.department;
       try {
         await onSubmit(transformedValues);
         console.log(transformedValues);

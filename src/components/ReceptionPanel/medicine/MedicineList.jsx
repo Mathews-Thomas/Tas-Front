@@ -32,7 +32,7 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
       setLoader(false);
       setMedicineList(response?.data?.medicines);
       setTotalPages(response?.data?.totalPages);
-      console.log(response?.data?.medicines);
+      // console.log(response?.data?.medicines);
     } catch (error) {
       console.error("Error fetching medicine list:", error);
     }
