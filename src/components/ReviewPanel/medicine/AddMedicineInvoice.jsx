@@ -10,13 +10,14 @@ import NewItemRow from "../Invoice/patientInvoice/addNewRow";
 import showAlert from "../../../commonFn/showAlert";
 import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
 import useToast from "../../../hooks/useToast";
+import AddNewMedicineRow from "./addNewMedicineRow";
 
 const initialValue = {
   invoiceID: "",
   patient: null,
   doctorID: "",
   DepartmentID: "",
-  MainDepartmentID:"",
+  MainDepartmentID: "",
   paymentMethod: "",
   items: [],
   paymentMethodID: "",
@@ -39,10 +40,13 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const [getInvoiceData, setGetInvoiceData] = useState({});
   const [formData, setFormData] = useState(initialValue);
   const [doctor, setDoctor] = useState({ name: "", doctor: "" });
-  const [procedure, setProcedure] = useState([]);
+  const [medicine, setMedicine] = useState([]);
   const [getData, setGetData] = useState(initialValue);
-  const [consultation,setConsultation]= useState(false)
-  const [medicine, setMedicine] = useState([]); //
+  const [consultation, setConsultation] = useState(false);
+
+  const [mainDepartmentID, setMainDepartmentID] = useState("");
+  console.log(mainDepartmentID, "mainDepartmentID");
+
   // selecting branch first....
   useEffect(() => {
     setBranch((prev) => {
@@ -50,23 +54,27 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     });
   }, [BranchID, location.search]);
 
-useEffect(()=>{
-  setConsultation(false)
-  if(formData.patient){
-    const today = new Date(); 
-  const lastConsultationDate = new Date(formData?.patient?.lastConsultationFeeDate);
-  const daysSinceLastConsultation = Math.floor((today - lastConsultationDate) / (1000 * 60 * 60 * 24)); 
-  if(formData?.patient?.lastConsultationFeeDate === undefined ){
-    setConsultation(true)
-  }else if(daysSinceLastConsultation > 30 ){
-    setConsultation(true)
-  }
-  } 
-},[formData.patient, formData.patient?.lastConsultationFeeDate])
+  useEffect(() => {
+    setConsultation(false);
+    if (formData.patient) {
+      const today = new Date();
+      const lastConsultationDate = new Date(
+        formData?.patient?.lastConsultationFeeDate
+      );
+      const daysSinceLastConsultation = Math.floor(
+        (today - lastConsultationDate) / (1000 * 60 * 60 * 24)
+      );
+      if (formData?.patient?.lastConsultationFeeDate === undefined) {
+        setConsultation(true);
+      } else if (daysSinceLastConsultation > 30) {
+        setConsultation(true);
+      }
+    }
+  }, [formData.patient, formData.patient?.lastConsultationFeeDate]);
 
   useEffect(() => {
     setDoctor("");
-    setProcedure([]);
+    setMedicine([]);
     setFormData((prev) => ({
       ...prev,
       doctorID: "",
@@ -74,21 +82,30 @@ useEffect(()=>{
     }));
   }, [branch]);
 
+
+
+
   // select Doctor Here ....
   const doctorHandle = useCallback(
     (name) => {
       const selectedDoctor = getData?.Doctors?.find((obj) => obj.name === name);
       if (selectedDoctor) {
         setDoctor({ name: selectedDoctor.name, doctor: selectedDoctor });
-        const filterdProcedure = getData?.Procedures?.filter((obj) =>
-          selectedDoctor.procedureIds.includes(obj._id)
+
+        // Filtering medicines based on mainDepartmentId and branchId
+        const filteredMedicines = getData?.Medicines?.filter(
+          (medicine) =>
+            medicine.mainDepartmentId === selectedDoctor.mainDepartmentId &&
+            medicine.branchId === selectedDoctor.branchId
         );
-        setProcedure(filterdProcedure);
+        setMedicine(filteredMedicines);
       }
     },
-    [getData?.Doctors, getData?.Procedures]
+    [getData?.Doctors, getData?.Medicines]
   );
 
+  console.log(medicine,"medicines");
+  
   // search Patient ......
   const fetchData = useCallback(async () => {
     try {
@@ -117,9 +134,10 @@ useEffect(()=>{
   const fetchInvoiceData = useCallback(async () => {
     try {
       const response = await Axios.get(
-        `/add-invoice?BranchID=${branch?.id}&PatientID=${PatientID}`
+        `admin/medicine/get-invoice?BranchID=${branch?.id}&PatientID=${PatientID}&mainDepartmentID=${mainDepartmentID}`
       );
       const data = response?.data;
+      console.log(data, "this is the response data");
       setGetData(data);
       setFormData((prev) => ({
         ...prev,
@@ -147,7 +165,7 @@ useEffect(()=>{
     } catch (error) {
       console.error("Fetching invoice data failed:", error);
     }
-  }, [branch?.id, PatientID]);
+  }, [branch?.id, PatientID, mainDepartmentID]);
 
   useEffect(() => {
     if (branch?.id) {
@@ -169,15 +187,17 @@ useEffect(()=>{
   //add doctor data
   useEffect(() => {
     if (doctor?.doctor?._id) {
+      const extractedMainDepartmentID = doctor?.doctor?.DepartmentID?.MainDepartmentID;
+      setMainDepartmentID(extractedMainDepartmentID);
       setFormData((prev) => ({
         ...initialValue, // Reset to initial values
         doctorID: doctor.doctor._id,
         DepartmentID: doctor?.doctor?.DepartmentID?._id,
-        MainDepartmentID:doctor?.doctor?.DepartmentID?.MainDepartmentID,
+        MainDepartmentID: doctor?.doctor?.DepartmentID?.MainDepartmentID,
         patient: prev.patient,
         invoiceID: prev?.invoiceID,
       }));
-    } 
+    }
   }, [doctor]);
 
   const resetForm = () => {
@@ -206,7 +226,7 @@ useEffect(()=>{
       return;
     }
     if (formData?.items.length <= 0) {
-      showAlert("Procedure", "Please add Procedure/Services ", "warning");
+      showAlert("Medicines", "Please add Medicines ", "warning");
       return;
     }
     if (!formData?.paymentMethod || !formData?.paymentMethodID) {
@@ -295,9 +315,11 @@ useEffect(()=>{
     });
   };
 
+  console.log(formData)
+
   return (
     <div className="bg-white w-full">
-      <div className="flex justify-end items-center"> 
+      <div className="flex justify-end items-center">
         <div className="w-1/2">
           {!BranchID && (
             <Select_Branch_ID value={branch} onChange={setBranch} />
@@ -306,29 +328,56 @@ useEffect(()=>{
       </div>
       <div className=" bg-white">
         <div className="flex justify-between items-center py-5">
-          {(!company.Logo ? <div className="h-20 bg-gray-300 w-48 rounded animate-pulse"></div> :  <img src={company.Logo} alt="Company Logo" className="h-20" />   )}
+          {!company.Logo ? (
+            <div className="h-20 bg-gray-300 w-48 rounded animate-pulse"></div>
+          ) : (
+            <img src={company.Logo} alt="Company Logo" className="h-20" />
+          )}
           <div className="text-xs text-right uppercase">
-          {(company?.branchName ? <><p className="font-bold text-lg ">
-          Topmost Dental and skin clinic
-            {/* Topmost 
+            {company?.branchName ? (
+              <>
+                <p className="font-bold text-lg ">
+                  Topmost Dental and skin clinic
+                  {/* Topmost 
             <span>{company?.branchName}</span> */}
-            </p>
-            <span>{company?.address}, </span>
-            <span>{company?.city}, </span>
-            <span>{company?.state}, </span>
-            <br />
-            <span>Pin:{company?.pincode}, </span>
-            <span>Phone:{company?.phone}, </span>
-            <span className="lowercase">{company?.email}</span></> : <div className="text-xs text-right uppercase">
-            <p className="font-bold text-lg ">Topmost <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-20"></span></p>
-            <span >  </span>
-            <span>  </span>
-            <span>  </span>
-            <br />
-            <span>Pin: <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-6"> ,</span>  </span>
-            <span>Phone: <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-10">  </span>, </span>
-            <span className="lowercase ml-2  rounded-full animate-pulse bg-gray-300 px-12"> </span>
-          </div> )}
+                </p>
+                <span>{company?.address}, </span>
+                <span>{company?.city}, </span>
+                <span>{company?.state}, </span>
+                <br />
+                <span>Pin:{company?.pincode}, </span>
+                <span>Phone:{company?.phone}, </span>
+                <span className="lowercase">{company?.email}</span>
+              </>
+            ) : (
+              <div className="text-xs text-right uppercase">
+                <p className="font-bold text-lg ">
+                  Topmost{" "}
+                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-20"></span>
+                </p>
+                <span> </span>
+                <span> </span>
+                <span> </span>
+                <br />
+                <span>
+                  Pin:{" "}
+                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-6">
+                    {" "}
+                    ,
+                  </span>{" "}
+                </span>
+                <span>
+                  Phone:{" "}
+                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-10">
+                    {" "}
+                  </span>
+                  ,{" "}
+                </span>
+                <span className="lowercase ml-2  rounded-full animate-pulse bg-gray-300 px-12">
+                  {" "}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -342,47 +391,69 @@ useEffect(()=>{
             </p>
             {formData?.patient ? (
               <div className="flex flex-row-reverse ">
-              <div>
-              {!PatientID && <svg
-                xmlns="http://www.w3.org/2000/svg"
-                height={20}
-                viewBox="0 0 24 24"
-                width={20}
-                fill="#387ADF"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  changeUser();
-                }}
-                className="cursor-pointer hover:scale-125 duration-300"
-              >
-                <path d="M0 0h24v24H0V0z" fill="none" />
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-              </svg>}
+                <div>
+                  {!PatientID && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      height={20}
+                      viewBox="0 0 24 24"
+                      width={20}
+                      fill="#387ADF"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        changeUser();
+                      }}
+                      className="cursor-pointer hover:scale-125 duration-300"
+                    >
+                      <path d="M0 0h24v24H0V0z" fill="none" />
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p>{formData?.patient?.Name}</p>
+                  <p>{`${formData?.patient?.Gender}, Age: ${formData?.patient?.age}`}</p>
+                  <p>{formData?.patient?.Address?.city}</p>
+                  <p>{`VisitorType: ${
+                    formData?.patient?.VisitorTypeID?.type
+                      ? formData?.patient?.VisitorTypeID?.type
+                      : "N/A"
+                  }`}</p>
+                  <p>{`PatientType: ${
+                    formData?.patient?.patientTypeID?.type
+                      ? formData?.patient?.patientTypeID?.type
+                      : "N/A"
+                  }`}</p>
+                </div>
               </div>
-              <div>
-                <p>{formData?.patient?.Name}</p>
-                <p>{`${formData?.patient?.Gender}, Age: ${formData?.patient?.age}`}</p>
-                <p>{formData?.patient?.Address?.city}</p>
-                <p>{`VisitorType: ${
-                  formData?.patient?.VisitorTypeID?.type
-                    ? formData?.patient?.VisitorTypeID?.type
-                    : "N/A"
-                }`}</p>
-                <p>{`PatientType: ${
-                  formData?.patient?.patientTypeID?.type
-                    ? formData?.patient?.patientTypeID?.type
-                    : "N/A"
-                }`}</p>
-              </div>
-            </div>
-            ) : ( PatientID ? 
+            ) : PatientID ? (
               <>
-              <span className="rounded-full animate-pulse bg-gray-300 px-16"> </span> 
-                <p><span className="rounded-full animate-pulse  bg-gray-300 px-8"> </span> , Age: <span className="rounded-full animate-pulse bg-gray-300 px-4"> </span></p>
-                <p>`VisitorType:` <span className="rounded-full animate-pulse bg-gray-300 px-6"> </span></p>
-                <p>`PatientType:` <span className="rounded-full animate-pulse bg-gray-300 px-6"> </span></p>
+                <span className="rounded-full animate-pulse bg-gray-300 px-16">
+                  {" "}
+                </span>
+                <p>
+                  <span className="rounded-full animate-pulse  bg-gray-300 px-8">
+                    {" "}
+                  </span>{" "}
+                  , Age:{" "}
+                  <span className="rounded-full animate-pulse bg-gray-300 px-4">
+                    {" "}
+                  </span>
+                </p>
+                <p>
+                  `VisitorType:`{" "}
+                  <span className="rounded-full animate-pulse bg-gray-300 px-6">
+                    {" "}
+                  </span>
+                </p>
+                <p>
+                  `PatientType:`{" "}
+                  <span className="rounded-full animate-pulse bg-gray-300 px-6">
+                    {" "}
+                  </span>
+                </p>
               </>
-               :
+            ) : (
               <div className="max-w-md mx-auto relative">
                 <TextFieldInput
                   label="Search Patient"
@@ -412,7 +483,6 @@ useEffect(()=>{
             )}
           </div>
           <div className="text-center ">
-           
             <p className="text-2xl font-bold uppercase">Invoice</p>
           </div>
           <div className="text-sm xl:w-1/6">
@@ -441,12 +511,12 @@ useEffect(()=>{
           </div>
         </div>
         {/* Invoice Title */}
- 
+
         {/* Items Table */}
         <div className="mb-8">
-          <table className="w-full"> 
+          <table className="w-full">
             <thead className="border-b border-black ">
-              <tr className="text-center"> 
+              <tr className="text-center">
                 <th className="p-2 text-sm font-medium">No</th>
                 <th className="p-2 text-sm font-medium">Medicines</th>
                 <th className="p-2 text-sm font-medium">HSNCode</th>
@@ -477,14 +547,14 @@ useEffect(()=>{
               {formData &&
                 formData?.items.map((item, index) => (
                   <tr
-                    key={item.ProcedureID}
+                    key={item.MedicineID}
                     className="border-b border-black text-center"
                   >
                     <td className="p-2 text-sm border-r border-black">
                       {index + 1}
                     </td>
                     <td className="p-2 text-sm border-r border-black">
-                      {item?.procedure}
+                      {item?.medicineName}
                     </td>
                     <td className="p-2 text-sm border-r border-black">
                       {item?.HSNCode}
@@ -540,17 +610,19 @@ useEffect(()=>{
                   </tr>
                 ))}
               {/* New Item Row */}
-              <NewItemRow
-                procedures={procedure}
+              <AddNewMedicineRow
+                medicines={medicine}
                 onAdd={addNewItem}
                 sl={formData?.items.length + 1}
               />
             </tbody>
           </table>
 
-
-           
-          {consultation && <div className="text-red-500 animate-pulse ps-8">Patient  Consultation Fee Required</div> }
+          {consultation && (
+            <div className="text-red-500 animate-pulse ps-8">
+              Patient Consultation Fee Required
+            </div>
+          )}
         </div>
 
         {/* Footer with Generated By, Total Amount, etc. */}
