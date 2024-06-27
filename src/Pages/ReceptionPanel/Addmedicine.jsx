@@ -1,22 +1,22 @@
-import React from "react";
-import MedicineForm from "../../components/ReceptionPanel/medicine/MedicineForm";
-import Axios from "../../config/axios";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React from 'react';
+import MedicineForm from '../../components/ReviewPanel/medicine/MedicineForm';
+import Axios from '../../config/axios';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Addmedicine = () => {
   const handleSubmit = async (formValues) => {
     try {
-      // Send form data to the API
-      const response = await Axios.post("/medicine/add-medicine", formValues);
-      console.log("Response:", response.data);
-      toast.success("Form submitted successfully!");
+      console.log('Form values:', formValues); // Debugging line
+      const response = await Axios.post('admin/medicine/add-medicine', formValues);
+      console.log('Response:', response.data); // Debugging line
+      toast.success('Medicine added successfully');
     } catch (error) {
-      // Check if the error has a response and data object
-
-      toast.error(error.response.data.error);
+      console.error('Error submitting form:', error); // Debugging line
+      toast.error(error.response?.data?.error || 'An error occurred');
     }
   };
+
   return (
     <div className="my-7">
       <div className="text-center text-2xl uppercase my-16 font-semibold">
