@@ -6,7 +6,6 @@ import SelectBox from "../../common/SelectBox";
 import TextFieldInput from "../../common/inputbox";
 import Axios from "../../../config/axios";
 import { useLocation } from "react-router-dom";
-import NewItemRow from "../Invoice/patientInvoice/addNewRow";
 import showAlert from "../../../commonFn/showAlert";
 import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
 import useToast from "../../../hooks/useToast";
@@ -31,7 +30,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const tost = useToast();
   const [branch, setBranch] = useState("");
   const location = useLocation();
-  const PatientID = new URLSearchParams(location.search).get("PatientID");
+  //const PatientID = new URLSearchParams(location.search).get("PatientID");
   const BranchID = new URLSearchParams(location.search).get("BranchID");
 
   const [company, setCompany] = useState({ Logo: CompanyLogo });
@@ -45,7 +44,8 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const [consultation, setConsultation] = useState(false);
 
   const [mainDepartmentID, setMainDepartmentID] = useState("");
-  console.log(mainDepartmentID, "mainDepartmentID");
+  const [PatientID, setPatientID] = useState(null);
+
 
   // selecting branch first....
   useEffect(() => {
@@ -104,7 +104,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     [getData?.Doctors, getData?.Medicines]
   );
 
-  console.log(medicine,"medicines");
+  
   
   // search Patient ......
   const fetchData = useCallback(async () => {
@@ -132,6 +132,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   }, [searchTerm, fetchData, branch?.id, tost]);
 
   const fetchInvoiceData = useCallback(async () => {
+    
     try {
       const response = await Axios.get(
         `admin/medicine/get-invoice?BranchID=${branch?.id}&PatientID=${PatientID}&mainDepartmentID=${mainDepartmentID}`
@@ -159,7 +160,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
         patientTypes: extractPatientTypes(data?.PatientTypes),
         VisitorTypes: extractPatientTypes(data?.VisitorTypes),
         paymentMethods: extractPaymentMethods(data?.paymentMethods),
-        invoiceID: data?.nextInvoceID,
+        invoiceID: data?.nextInvoiceID,
         createdBy: data?.createdBy,
       });
     } catch (error) {
@@ -167,11 +168,14 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     }
   }, [branch?.id, PatientID, mainDepartmentID]);
 
+  console.log(patientList, "this is the patient list");
+  //console.log(PatientID, "this is the patient id");
+
   useEffect(() => {
     if (branch?.id) {
       fetchInvoiceData();
     }
-  }, [branch?.id, fetchInvoiceData]);
+  }, [branch?.id, fetchInvoiceData,PatientID]);
 
   const handlePaymentMethod = (Method) => {
     setFormData((prev) => {
@@ -297,14 +301,13 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   };
 
   const handlePatient = (patient) => {
-    setFormData((prev) => {
-      return {
-        ...prev,
-        patient: patient,
-      };
-    });
-    setSearchTerm("");
+    setFormData((prevData) => ({
+      ...prevData,
+      patient,
+    }));
+    setPatientID(patient?.PatientID);
   };
+  
 
   const changeUser = () => {
     setFormData((prev) => {
@@ -315,6 +318,8 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     });
   };
 
+  console.log(PatientID,"this is the patient id");
+  console.log(medicine,"this is the medicine");
   console.log(formData)
 
   return (
