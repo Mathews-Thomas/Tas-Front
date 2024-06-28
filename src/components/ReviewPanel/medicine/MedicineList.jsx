@@ -40,6 +40,8 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [branch?.id, searchTerm, page, list, selectedMainDepartment]);
 
+  console.log(medicineList,"this is the medicine list");
+
   useEffect(() => {
     if (branch?.id) {
       setLoader(true);
@@ -83,8 +85,8 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [branch, mainDepartments]);
 
-  const columns = ["medicineName", "category", "quantity", "price", "createdBy"]; // Adjust as per your data structure
-  const tableHeaders = ["Medicine Name", "Category", "Quantity", "Price", "Created By"]; // Adjust as per your data structure
+  const columns = ["medicineName", "manufacturerName", "quantity", "price", "createdBy"]; // Adjust as per your data structure
+  const tableHeaders = ["Medicine Name", "Manufacture", "Quantity", "Price", "Created By"]; // Adjust as per your data structure
 
   const endpoints = {
     update: 'medicine/update-status', // Adjust the endpoint for updating medicine status
