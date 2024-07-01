@@ -6,13 +6,21 @@ import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import showAlert from "../../../commonFn/showAlert";
 
 function AddNewMedicineRow({ medicines, onAdd, sl }) {
+  const formatExpiryDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${day}-${month}-${year}`;
+  };
   const datalist = medicines?.map((item) => ({
     type: item?.medicineName,
-    description: item?.category,
+    batchNumber: item?.batchNumber,
     _id: item?._id,
-    HSNCode: item?.batchNumber,
-    GST: item?.price,
-    strength: item?.strength,
+    HSNCode: item?.HSNCode,
+    GST: item?.gst,
+    expiryDate: formatExpiryDate(item?.expirationDate),
   }));
 
   const [newItem, setNewItem] = useState({
@@ -20,14 +28,14 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
     medicineName: "",
     quantity: 1,
     unitPrice: 0,
-    discountType: "INR",
     HSNCode: "",
-    discount: 0,
     totalAmount: 0,
     amountToBePaid: 0,
     GST: 0,
     baseAmount: 0,
     gstAmount: 0,
+    batchNumber: "",
+    expiryDate: "",
   });
 
   useEffect(() => {
@@ -36,9 +44,9 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
       medicineName: "",
       quantity: 1,
       unitPrice: 0,
-      discountType: "INR",
+      batchNumber: "",
+      expiryDate: "",
       HSNCode: "",
-      discount: 0,
       totalAmount: 0,
       amountToBePaid: 0,
       GST: 0,
@@ -60,8 +68,8 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
     const amountToBePaid = calculateTotal(
       newItem.unitPrice,
       newItem.quantity,
-      newItem.discount,
-      newItem.discountType
+      // newItem.discount,
+      // newItem.discountType
     );
     const baseAmount = (amountToBePaid / (1 + newItem.GST / 100)).toFixed(2);
     const gstAmount = ((baseAmount * newItem.GST) / 100).toFixed(2);
@@ -90,6 +98,8 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
       MedicineID: data?._id || "",
       GST: data?.GST || 0,
       HSNCode: data?.HSNCode || "",
+      batchNumber: data?.batchNumber || "",
+      expiryDate: data?.expiryDate || "",
     }));
   };
 
@@ -116,7 +126,8 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
       medicineName: "",
       quantity: 1,
       unitPrice: 0,
-      discountType: "INR",
+      batchNumber: "",
+      expiryDate: "",
       HSNCode: "",
       discount: 0,
       totalAmount: 0,
@@ -126,8 +137,6 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
       gstAmount: 0,
     });
   };
-
-  const discountTypeOptions = [{ type: "INR" }, { type: "%" }];
 
   return (
     <tr className="border-none">
@@ -149,7 +158,6 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
           type="text"
           disabled
           value={newItem.HSNCode}
-          onChange={(e) => updateField("HSNCode", Number(e.target.value))}
         />
       </td>
       <td className="p-2 w-[7%]">
@@ -171,67 +179,55 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
         />
       </td>
       <td className="pl-2 w-[15%]">
-        <div className="flex w-full">
-          <div className="w-1/2">
-            <TextFieldInput
-              label="Discount"
-              name="discount"
-              type="number"
-              value={newItem.discount}
-              onChange={(e) => updateField("discount", Number(e.target.value))}
-            />
-          </div>
-          <div className="w-1/2">
-            <SelectBox
-              id="discountType"
-              label="Type"
-              options={discountTypeOptions}
-              onChange={(value) => updateField("discountType", value)}
-              value={newItem?.discountType}
-            />
-          </div>
-        </div>
+        <TextFieldInput
+          label="Batch Number"
+          name="batchNumber"
+          type="text"
+          value={newItem.batchNumber}
+          onChange={(e) => updateField("batchNumber", e.target.value)}
+        />
       </td>
-      <td className="p-2  w-[10%]">
+      <td className="p-2 w-[10%]">
+        <TextFieldInput
+          label=""
+          name="expiryDate"
+          type="date"
+          value={newItem.expiryDate}
+          disabled
+          onChange={(e) => updateField("expiryDate", e.target.value)}
+        />
+      </td>
+      <td className="p-2 w-[10%]">
         <TextFieldInput
           label={"GST %"}
           name={"GST"}
-          disabled
           type={"number"}
           value={newItem?.GST}
-          onChange={(e) => {
-            updateField("GST", Number(e.target.value));
-          }}
+          onChange={(e) => updateField("GST", Number(e.target.value))}
         />
       </td>
-      <td className="p-2  w-[10%]">
+      <td className="p-2 w-[10%]">
         <TextFieldInput
           label={"Taxable Amount"}
           name={"baseAmount"}
           disabled
           type={"number"}
           value={newItem?.baseAmount}
-          onChange={(e) => {
-            updateField("baseAmount", Number(e.target.value));
-          }}
         />
       </td>
-      <td className="p-2   w-[10%]">
+      <td className="p-2 w-[10%]">
         <TextFieldInput
           label={"GST Amount"}
           name={"gstAmount"}
           type={"number"}
           value={newItem.gstAmount}
           disabled
-          onChange={(e) => {
-            updateField("gstAmount", Number(e.target.value));
-          }}
         />
       </td>
       <td className="text-center">{newItem.amountToBePaid}</td>
       <td className="p-2">
         <button
-          className=" bg-green-400 rounded-full py-2 px-3"
+          className="bg-green-400 rounded-full py-2 px-3"
           onClick={handleAddClick}
         >
           <FontAwesomeIcon icon={faPlus} />

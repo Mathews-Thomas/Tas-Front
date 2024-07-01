@@ -30,7 +30,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const tost = useToast();
   const [branch, setBranch] = useState("");
   const location = useLocation();
-  //const PatientID = new URLSearchParams(location.search).get("PatientID");
+  const PatientID = new URLSearchParams(location.search).get("PatientID");
   const BranchID = new URLSearchParams(location.search).get("BranchID");
 
   const [company, setCompany] = useState({ Logo: CompanyLogo });
@@ -42,17 +42,24 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const [medicine, setMedicine] = useState([]);
   const [getData, setGetData] = useState(initialValue);
   const [consultation, setConsultation] = useState(false);
-
   const [mainDepartmentID, setMainDepartmentID] = useState("");
-  const [PatientID, setPatientID] = useState(null);
 
 
-  // selecting branch first....
   useEffect(() => {
-    setBranch((prev) => {
-      return { ...prev, id: BranchID };
-    });
+    if (BranchID) {
+      setBranch({ id: BranchID });
+      fetchBranchData(BranchID);
+    }
   }, [BranchID, location.search]);
+
+  const fetchBranchData = useCallback(async (branchID) => {
+    try {
+      const response = await Axios.get(`/branch-details/${branchID}`);
+      setCompany(response.data);
+    } catch (error) {
+      console.error("Error fetching branch details:", error);
+    }
+  }, []);
 
   useEffect(() => {
     setConsultation(false);
@@ -82,17 +89,12 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     }));
   }, [branch]);
 
-
-
-
-  // select Doctor Here ....
   const doctorHandle = useCallback(
     (name) => {
       const selectedDoctor = getData?.Doctors?.find((obj) => obj.name === name);
       if (selectedDoctor) {
         setDoctor({ name: selectedDoctor.name, doctor: selectedDoctor });
 
-        // Filtering medicines based on mainDepartmentId and branchId
         const filteredMedicines = getData?.Medicines?.filter(
           (medicine) =>
             medicine.mainDepartmentId === selectedDoctor.mainDepartmentId &&
@@ -104,9 +106,6 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     [getData?.Doctors, getData?.Medicines]
   );
 
-  
-  
-  // search Patient ......
   const fetchData = useCallback(async () => {
     try {
       const response = await Axios.get(`/patient-list/${branch?.id}`, {
@@ -132,10 +131,9 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   }, [searchTerm, fetchData, branch?.id, tost]);
 
   const fetchInvoiceData = useCallback(async () => {
-    
     try {
       const response = await Axios.get(
-        `admin/medicine/get-invoice?BranchID=${branch?.id}&PatientID=${PatientID}&mainDepartmentID=${mainDepartmentID}`
+        `admin/medicine/get-invoice-dropdowns?BranchID=${branch?.id}&PatientID=${PatientID}&mainDepartmentID=${mainDepartmentID}`
       );
       const data = response?.data;
       console.log(data, "this is the response data");
@@ -143,7 +141,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
       setFormData((prev) => ({
         ...prev,
         patient: data?.Patients,
-        invoiceID: data?.nextInvoceID,
+        invoiceID: data?.nextInvoiceID,
       }));
       setCompany((prev) => ({ ...prev, ...data?.branch }));
 
@@ -168,14 +166,11 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     }
   }, [branch?.id, PatientID, mainDepartmentID]);
 
-  console.log(patientList, "this is the patient list");
-  //console.log(PatientID, "this is the patient id");
-
   useEffect(() => {
     if (branch?.id) {
       fetchInvoiceData();
     }
-  }, [branch?.id, fetchInvoiceData,PatientID]);
+  }, [branch?.id, fetchInvoiceData, PatientID]);
 
   const handlePaymentMethod = (Method) => {
     setFormData((prev) => {
@@ -188,13 +183,13 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     });
   };
 
-  //add doctor data
   useEffect(() => {
     if (doctor?.doctor?._id) {
-      const extractedMainDepartmentID = doctor?.doctor?.DepartmentID?.MainDepartmentID;
+      const extractedMainDepartmentID =
+        doctor?.doctor?.DepartmentID?.MainDepartmentID;
       setMainDepartmentID(extractedMainDepartmentID);
       setFormData((prev) => ({
-        ...initialValue, // Reset to initial values
+        ...initialValue,
         doctorID: doctor.doctor._id,
         DepartmentID: doctor?.doctor?.DepartmentID?._id,
         MainDepartmentID: doctor?.doctor?.DepartmentID?.MainDepartmentID,
@@ -213,6 +208,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   };
 
   const onSubmit = () => {
+    // Validate required fields
     if (!formData?.invoiceID) {
       showAlert("Invoice ID", "", "warning");
       return;
@@ -235,15 +231,40 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     }
     if (!formData?.paymentMethod || !formData?.paymentMethodID) {
       showAlert(
-        "paymentMethod",
+        "Payment Method",
         "Please Choose Your Payment Method",
         "warning"
       );
       return;
     }
 
-    Axios.post("/add-invoice", { ...formData, BranchID: branch?.id })
+    // Parse numeric fields to ensure they are numbers
+    const parsedItems = formData.items.map((item) => ({
+      ...item,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unitPrice),
+      discount: Number(item.discount),
+      totalAmount: Number(item.totalAmount),
+      amountToBePaid: Number(item.amountToBePaid),
+      GST: Number(item.GST),
+      gstAmount: Number(item.gstAmount),
+      baseAmount: Number(item.baseAmount),
+    }));
+
+    const parsedFormData = {
+      ...formData,
+      totalAmount: Number(formData.totalAmount),
+      totalDiscount: Number(formData.totalDiscount),
+      amountToBePaid: Number(formData.amountToBePaid),
+      items: parsedItems,
+    };
+
+    Axios.post("admin/medicine/add-invoice", {
+      ...parsedFormData,
+      BranchID: branch?.id,
+    })
       .then(() => {
+        console.log(formData, "this is the form data");
         setFormData(initialValue);
         showAlert("Success", "Invoice Added", "success");
         resetForm();
@@ -255,15 +276,30 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
 
   const addNewItem = (item) => {
     if (doctor) {
+      const {
+        totalAmount,
+        taxableValue: baseAmount,
+        gstAmount,
+      } = calculateGSTAmounts(item);
+
+      const newItem = {
+        ...item,
+        totalAmount: Number(totalAmount),
+        baseAmount: Number(baseAmount),
+        gstAmount: Number(gstAmount),
+        amountToBePaid: Number(totalAmount),
+      };
+
       setFormData((prev) => {
-        const discountAmount = item.totalAmount - item.amountToBePaid;
-        const newTotelDiscount = prev.totalDiscount + discountAmount;
-        const newTotalAmount = prev.totalAmount + item.totalAmount;
-        const newAmountToBePaid = prev.amountToBePaid + item.amountToBePaid;
+        const discountAmount = newItem.totalAmount - newItem.amountToBePaid;
+        const newTotalDiscount = prev.totalDiscount + discountAmount;
+        const newTotalAmount = prev.totalAmount + newItem.totalAmount;
+        const newAmountToBePaid = prev.amountToBePaid + newItem.amountToBePaid;
+
         return {
           ...prev,
-          items: [...prev.items, item],
-          totalDiscount: newTotelDiscount,
+          items: [...prev.items, newItem],
+          totalDiscount: newTotalDiscount,
           totalAmount: newTotalAmount,
           amountToBePaid: newAmountToBePaid,
         };
@@ -278,7 +314,6 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
       (_, itemIndex) => itemIndex !== index
     );
 
-    // Recalculate totals
     let newTotalAmount = 0;
     let newTotalDiscount = 0;
     let newAmountToBePaid = 0;
@@ -290,7 +325,6 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
       newAmountToBePaid += item.amountToBePaid;
     });
 
-    // Update state with the new values
     setFormData({
       ...formData,
       items: updatedItems,
@@ -304,10 +338,9 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     setFormData((prevData) => ({
       ...prevData,
       patient,
+      patientID: patient._id,
     }));
-    setPatientID(patient?.PatientID);
   };
-  
 
   const changeUser = () => {
     setFormData((prev) => {
@@ -318,9 +351,24 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     });
   };
 
-  console.log(PatientID,"this is the patient id");
-  console.log(medicine,"this is the medicine");
-  console.log(formData)
+  const calculateGSTAmounts = (item) => {
+    const totalAmount = item.unitPrice * item.quantity;
+    const taxableValue = (totalAmount / (1 + item.GST / 100)).toFixed(2);
+    const gstAmount = (totalAmount - taxableValue).toFixed(2);
+    return { totalAmount, taxableValue, gstAmount };
+  };
+
+  const handleTotalDiscountChange = (e) => {
+    const totalDiscount = parseFloat(e.target.value) || 0;
+    const newAmountToBePaid = formData.totalAmount - totalDiscount;
+    setFormData((prev) => ({
+      ...prev,
+      totalDiscount,
+      amountToBePaid: newAmountToBePaid,
+    }));
+  };
+
+  console.log(formData, "this is the form data");
 
   return (
     <div className="bg-white w-full">
@@ -343,8 +391,6 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
               <>
                 <p className="font-bold text-lg ">
                   Topmost Dental and skin clinic
-                  {/* Topmost 
-            <span>{company?.branchName}</span> */}
                 </p>
                 <span>{company?.address}, </span>
                 <span>{company?.city}, </span>
@@ -370,7 +416,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
                     {" "}
                     ,
                   </span>{" "}
-                </span>
+                </span>{" "}
                 <span>
                   Phone:{" "}
                   <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-10">
@@ -388,7 +434,6 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
 
         <hr className="my-5" />
 
-        {/* Patient Details and Invoice Info */}
         <div className="flex justify-between border-b py-4">
           <div className="text-sm">
             <p>
@@ -510,14 +555,12 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
               />
             </div>
             <p>
-              <strong>Department:</strong>{" "}
-              {doctor && doctor?.doctor?.DepartmentID?.Name}
+              <strong>Main Department:</strong>{" "}
+              {doctor && doctor?.doctor?.DepartmentID?.MainDepartmentID?.Name}
             </p>
           </div>
         </div>
-        {/* Invoice Title */}
 
-        {/* Items Table */}
         <div className="mb-8">
           <table className="w-full">
             <thead className="border-b border-black ">
@@ -527,7 +570,8 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
                 <th className="p-2 text-sm font-medium">HSNCode</th>
                 <th className="p-2 text-sm font-medium">Qty</th>
                 <th className="p-2 text-sm font-medium">Unit Rate</th>
-                <th className="p-2 text-sm font-medium ">Discount</th>
+                <th className="p-2 text-sm font-medium ">Batch Number</th>
+                <th className="p-2 text-sm font-medium ">Expiry Date </th>
 
                 <th className="p-2 text-sm font-medium  ">
                   <div className="flex">
@@ -550,71 +594,70 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
             </thead>
             <tbody>
               {formData &&
-                formData?.items.map((item, index) => (
-                  <tr
-                    key={item.MedicineID}
-                    className="border-b border-black text-center"
-                  >
-                    <td className="p-2 text-sm border-r border-black">
-                      {index + 1}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.medicineName}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.HSNCode}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.quantity}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.unitPrice}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black ">
-                      {item?.discount} {item?.discountType}
-                    </td>
+                formData?.items.map((item, index) => {
+                  const {
+                    totalAmount,
+                    taxableValue: baseAmount,
+                    gstAmount,
+                  } = calculateGSTAmounts(item);
+                  return (
+                    <tr
+                      key={item.MedicineID}
+                      className="border-b border-black text-center"
+                    >
+                      <td className="p-2 text-sm border-r border-black">
+                        {index + 1}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {item?.medicineName}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {item?.HSNCode}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {item?.quantity}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {item?.unitPrice}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black ">
+                        {item?.batchNumber}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black ">
+                        {item?.expiryDate}
+                      </td>
 
-                    <td className="p-2 text-sm border-r  border-black">
-                      <div className="flex">
-                        <span className="border-r p-2  flex-1">
-                          {item?.GST}%
-                        </span>{" "}
-                        <span className="border-r p-2 flex-1">
-                          {item?.GST / 2}%
-                        </span>
-                        <span className="flex-1 p-2">{item?.GST / 2}%</span>
-                      </div>
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.amountToBePaid && item?.GST !== undefined
-                        ? (item.amountToBePaid / (1 + item.GST / 100)).toFixed(
-                            2
-                          )
-                        : "N/A"}
-                    </td>
-                    <td className="p-2 text-sm border-r border-black">
-                      {item?.amountToBePaid && item?.GST !== undefined
-                        ? (
-                            item.amountToBePaid -
-                            item.amountToBePaid / (1 + item.GST / 100)
-                          ).toFixed(2)
-                        : "N/A"}
-                    </td>
-
-                    <td className="p-2 text-sm border-r w-[10%] border-black">
-                      {item?.amountToBePaid}
-                    </td>
-                    <td className="p-2">
-                      <button
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => deleteItem(index)}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              {/* New Item Row */}
+                      <td className="p-2 text-sm border-r  border-black">
+                        <div className="flex">
+                          <span className="border-r p-2  flex-1">
+                            {item?.GST}%
+                          </span>{" "}
+                          <span className="border-r p-2 flex-1">
+                            {item?.GST / 2}%
+                          </span>
+                          <span className="flex-1 p-2">{item?.GST / 2}%</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {baseAmount}
+                      </td>
+                      <td className="p-2 text-sm border-r border-black">
+                        {gstAmount}
+                      </td>
+                      <td className="p-2 text-sm border-r w-[10%] border-black">
+                        {totalAmount}
+                      </td>
+                      <td className="p-2">
+                        <button
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => deleteItem(index)}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               <AddNewMedicineRow
                 medicines={medicine}
                 onAdd={addNewItem}
@@ -623,14 +666,13 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
             </tbody>
           </table>
 
-          {consultation && (
+          {/* {consultation && (
             <div className="text-red-500 animate-pulse ps-8">
               Patient Consultation Fee Required
             </div>
-          )}
+          )} */}
         </div>
 
-        {/* Footer with Generated By, Total Amount, etc. */}
         <div className="flex justify-between items-center pt-4">
           <div className="text-sm">
             <p>
@@ -646,7 +688,13 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
               <strong>Total Amount:</strong> {Number(formData?.totalAmount)}
             </p>
             <p>
-              <strong>Total Discount:</strong> {formData?.totalDiscount}
+              <strong>Total Discount:</strong>
+              <input
+                type="number"
+                value={formData.totalDiscount}
+                onChange={handleTotalDiscountChange}
+                className="ml-2 w-20 p-1 border border-gray-300 rounded"
+              />
             </p>
             <p>
               <strong>Amount to be Paid:</strong> {formData?.amountToBePaid}

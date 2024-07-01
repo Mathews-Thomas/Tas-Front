@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Axios from "../../../config/axios";
 import Doctorlist_Model from "../DoctorList/Doctor_List_Modal";
-import View_More_Modal from "../../ReviewPanel/commen/View_More_Modal";
+import View_More_Modal from "../commen/View_More_Modal";
 import ProgressBar from "../../common/ProgressBar/ProgressBar";
 import MedicineEditForm from "./MedicineEditForm";
 

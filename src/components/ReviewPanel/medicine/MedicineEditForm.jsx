@@ -171,8 +171,8 @@ const MedicineEditForm = ({
 
   // cancel function
   const handleCancel = () => {
-    formik.handleReset(); // Reset the form using Formik's handleReset
-    onClose(); // Close the modal
+    formik.handleReset(); 
+    onClose(); 
   };
 
   useEffect(() => {

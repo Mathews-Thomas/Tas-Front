@@ -27,12 +27,12 @@ import DoctorsList from "./Pages/ReviewPanel/Doctors-List";
 
 //Add Medicine Review panel
 import Addmedicine from "./Pages/ReviewPanel/Addmedicine";
-import MedicineInvoice from "./components/ReviewPanel/medicine/MedicineInvoice";
 import MedicineDirectory from "./components/ReviewPanel/medicine/MedicineDirectory";
 
 //Add Medicine Reception panel
 import Add_medicine from "./Pages/ReceptionPanel/Addmedicine";
 import Medicine_Directory from "./components/ReceptionPanel/medicine/MedicineDirectory"
+
 // Review panel
 import ReviewPannelWraper from "./components/ReviewPanel/ReviewPanelWraper";
 import ReviewHome from "./Pages/ReviewPanel/Home";
@@ -45,6 +45,10 @@ import Profile from "./components/ReviewPanel/Additional/profile";
 import USERSettings from "./components/ReceptionPanel/Additional/settings";
 import USERProfile from "./components/ReceptionPanel/Additional/profile";
 import Consolidate_Report from "./components/common/report/Consolidate_report"
+
+
+// Medicine invoice 
+import MedicineInvoice from "./Pages/ReviewPanel/add_Medicine_invoice";
 
 
 

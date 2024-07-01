@@ -1,13 +1,13 @@
 /* eslint-disable react/prop-types */
 import React, { useCallback, useEffect, useState } from "react";
-import Table from "./MedicineTable";
+import MedicineTable from "./MedicineTable";
 import Axios from "../../../config/axios";
 import { Pagination } from "@mui/material";
-import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
+import Select_Branch_ID from "../commen/BranchIDSelection";
 
 const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
   const [loader, setLoader] = useState(true);
-  const [medicineList, setMedicineList] = useState([]);
+  const [medicineInvoiceList, setMedicineInvoiceList] = useState([]);
   const [branch, setBranch] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1); // Current page
@@ -17,14 +17,15 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
     setPage(value);
   };
 
+  
   const fetchData = useCallback(() => {
     setLoader(true);
-    Axios.get(branch?.id ? `/admin/medicine/get-medicine/${branch?.id}` : 'admin/medicine/get-medicine', {
+    Axios.get(branch?.id ? `admin/medicine/get-invoice-list/${branch?.id}` : 'admin/medicine/get-medicine', {
       params: { search: searchTerm, page: page, limit: list },
     })
       .then((response) => {
         setLoader(false);
-        setMedicineList(response?.data?.medicines);
+        setMedicineInvoiceList(response?.data?.medicineInvoice);
         setTotalPages(response?.data?.totalPages);
       })
       .catch((error) => {
@@ -44,6 +45,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
   useEffect(() => {
     fetchData();
   }, [branch?.id, page, fetchData]);
+  console.log(medicineInvoiceList,"medicineInvoiceList")
 
   return (
     <div className="topbar p-10 bg-white">
@@ -59,7 +61,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
               <Select_Branch_ID value={branch} onChange={setBranch} />
               <input
                 type="text"
-                placeholder="Search medicines..."
+                placeholder="Search Patient..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="p-[0.965rem] border border-gray-300 rounded w-full mt-2 focus:outline-none"
@@ -68,8 +70,8 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
           </div>
         </div>
       </div>
-      <Table
-        data={medicineList}
+      <MedicineTable
+        data={medicineInvoiceList}
         fetchData={fetchData}
         loader={loader}
       />

@@ -124,6 +124,7 @@ useEffect(()=>{
         `/add-invoice?BranchID=${branch?.id}&PatientID=${PatientID}`
       );
       const data = response?.data;
+      console.log(data, "this is the response data");
       setGetData(data);
       setFormData((prev) => ({
         ...prev,

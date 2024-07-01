@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Axios from "../../../config/axios";
 import { Pagination, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material";
 import Table from "./Table";
-import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
+import Select_Branch_ID from "../commen/BranchIDSelection";
 
 const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const [loader, setLoader] = useState(true);
