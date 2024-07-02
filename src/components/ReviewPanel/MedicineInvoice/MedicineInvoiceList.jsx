@@ -45,7 +45,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
   useEffect(() => {
     fetchData();
   }, [branch?.id, page, fetchData]);
-  console.log(medicineInvoiceList,"medicineInvoiceList")
+ // console.log(medicineInvoiceList,"medicineInvoiceList")
 
   return (
     <div className="topbar p-10 bg-white">

@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      maxWidth: {
+        'custom': '80%', // Replace 80% with the desired width
+      },
       fontFamily: {
         'Inter':['Inter', 'sans-serif'],
         'Poppins':['Poppins', 'sans-serif']

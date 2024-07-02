@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from "react";
 import ProgressBar from "../../common/ProgressBar/ProgressBar";
+import Medicine_Invoive_Edit_Modal from "./EditmodalMedicine";
 
-function MedicineTable({ data, loader }) {
+function MedicineTable({ data, loader,fetchData }) {
   const [branchDetails, setBranchDetails] = useState({});
   const [invoice, setInvoice] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchBranchDetails = useCallback(
     async (BranchID) => {
@@ -32,6 +34,11 @@ function MedicineTable({ data, loader }) {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const handleEditClick = (invoice) => {
+    setInvoice(invoice);
+    setShowEditModal(true);
+  };
+
   return (
     <div className="overflow-x-auto mt-6 ">
       <table className="border-collapse text-left bg-white min-w-full border-8">
@@ -47,7 +54,7 @@ function MedicineTable({ data, loader }) {
               Patient Name
             </th>
             <th className="px-6 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs text-center">
-             Consuambles
+              Consuambles
             </th>
             <th className="px-6 py-3 bg-gray-100 font-semibold uppercase border-b border-gray-200 text-xs text-center">
               Doctor
@@ -165,12 +172,12 @@ function MedicineTable({ data, loader }) {
         </tbody>
       </table>
 
-      {/* <Invoive_Edit_Modal
+      <Medicine_Invoive_Edit_Modal
         fetchData={fetchData}
         invoice={invoice}
         showEditModal={showEditModal}
         setShowEditModal={setShowEditModal}
-      /> */}
+      />
     </div>
   );
 }

@@ -119,6 +119,7 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
       );
       invoice?.invoiceID;
       const data = response.data;
+      console.log(data, "data");
 
       setGetData(data);
       setFormData((prev) => ({

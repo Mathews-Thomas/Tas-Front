@@ -26,7 +26,7 @@ const initialValue = {
 };
 
 const date = new Date().toLocaleDateString();
-const AddMedicineInvoice = ({ setRefreshList }) => {
+const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   const tost = useToast();
   const [branch, setBranch] = useState("");
   const location = useLocation();
@@ -45,24 +45,8 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const [mainDepartmentID, setMainDepartmentID] = useState("");
 
   const jobRole = localStorage.getItem("jobRole");
- 
 
 
-  useEffect(() => {
-    if (BranchID) {
-      setBranch({ id: BranchID });
-      fetchBranchData(BranchID);
-    }
-  }, [BranchID, location.search]);
-
-  const fetchBranchData = useCallback(async (branchID) => {
-    try {
-      const response = await Axios.get(`/branch-details/${branchID}`);
-      setCompany(response.data);
-    } catch (error) {
-      console.error("Error fetching branch details:", error);
-    }
-  }, []);
 
   useEffect(() => {
     setConsultation(false);
@@ -109,16 +93,43 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     [getData?.Doctors, getData?.Medicines]
   );
 
-  const fetchData = useCallback(async () => {
-    try {
-      const response = await Axios.get(`/patient-list/${branch?.id}`, {
-        params: { search: searchTerm },
+  useEffect(() => {
+    if (invoice) {
+      setFormData((prev) => {
+        return {
+          ...prev,
+          invoiceID: invoice?.invoiceID,
+          patient: invoice?.patientID?._id,
+          doctorID: invoice?.doctorID._id,
+          DepartmentID: invoice?.DepartmentID?._id,
+          MainDepartmentID:
+            invoice?.DepartmentID?.MainDepartmentID ||
+            invoice?.MainDepartmentID,
+          paymentMethod: invoice?.paymentMethod.paymentMethod,
+          items: invoice?.items,
+          paymentMethodID: invoice?.paymentMethod.paymentMethodID,
+          totalAmount: invoice?.totalAmount,
+          totalDiscount: invoice?.totalDiscount,
+          amountToBePaid: invoice?.amountToBePaid,
+        };
       });
-      setPatientList(response?.data?.patients);
-    } catch (error) {
-      console.error("Error fetching patient list:", error);
     }
-  }, [branch?.id, searchTerm]);
+  }, [invoice]);
+
+  useEffect(() => {
+    doctorHandle(invoice?.doctorID?.name);
+  }, [doctorHandle, invoice?.doctorID?.name]);
+
+  //   const fetchData = useCallback(async () => {
+  //     try {
+  //       const response = await Axios.get(`/patient-list/${branch?.id}`, {
+  //         params: { search: searchTerm },
+  //       });
+  //       setPatientList(response?.data?.patients);
+  //     } catch (error) {
+  //       console.error("Error fetching patient list:", error);
+  //     }
+  //   }, [branch?.id, searchTerm]);
 
   useEffect(() => {
     const debounceFetch = setTimeout(() => {
@@ -136,7 +147,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   const fetchInvoiceData = useCallback(async () => {
     try {
       const response = await Axios.get(
-        `admin/medicine/get-invoice-dropdowns?BranchID=${branch?.id}&PatientID=${PatientID}&mainDepartmentID=${mainDepartmentID}`
+        `admin/medicine/get-invoice-dropdowns?BranchID=${invoice?.BranchID}&PatientID=${invoice?.patientID.PatientID}`
       );
       const data = response?.data;
       console.log(data, "this is the response data");
@@ -146,8 +157,12 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
         patient: data?.Patients,
         invoiceID: data?.nextInvoiceID,
       }));
-      setCompany((prev) => ({ ...prev, ...data?.branch }));
-
+    //  setCompany((prev) => ({ ...prev, ...data?.branch }));
+    if(data?.branch){
+        setCompany(data.branch);
+    }
+ 
+    console.log(company, "company");
       const extractPatientTypes = (patientTypes) => {
         return patientTypes?.map((type) => type?.type);
       };
@@ -167,13 +182,15 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     } catch (error) {
       console.error("Fetching invoice data failed:", error);
     }
-  }, [branch?.id, PatientID, mainDepartmentID]);
+  }, [invoice?.BranchID, invoice?.invoiceID, invoice?.patientID._id]);
 
-  useEffect(() => {
-    if (branch?.id) {
-      fetchInvoiceData();
-    }
-  }, [branch?.id, fetchInvoiceData, PatientID]);
+
+
+//   useEffect(() => {
+//     if (branch?.id) {
+//       fetchInvoiceData();
+//     }
+//   }, [branch?.id, fetchInvoiceData, PatientID]);
 
   const handlePaymentMethod = (Method) => {
     setFormData((prev) => {
@@ -200,7 +217,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
         invoiceID: prev?.invoiceID,
       }));
     }
-  }, [doctor]);
+  }, [doctor, invoice?.invoiceID]);
 
   const resetForm = () => {
     setFormData(initialValue);
@@ -371,70 +388,27 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
     }));
   };
 
-  //console.log(formData, "this is the form data");
+  console.log(formData, "this is the form data");
 
   return (
-    <div className="bg-white w-full">
-      <div className="flex justify-end items-center">
-        <div className="w-1/2">
-          {!BranchID && (
-            <Select_Branch_ID value={branch} onChange={setBranch} />
-          )}
-        </div>
-      </div>
+    <div className="bg-white w-full pl-4 pr-4">
       <div className=" bg-white">
-        <div className="flex justify-between items-center py-5">
-          {!company.Logo ? (
-            <div className="h-20 bg-gray-300 w-48 rounded animate-pulse"></div>
-          ) : (
-            <img src={company.Logo} alt="Company Logo" className="h-20" />
-          )}
+        <div className="flex justify-between items-center border-b pb-4">
+          <img src={company.Logo} alt="Company Logo" className="h-20" />
           <div className="text-xs text-right uppercase">
-            {company?.branchName ? (
-              <>
-                <p className="font-bold text-lg ">
-                  Topmost Dental and skin clinic
-                </p>
-                <span>{company?.address}, </span>
-                <span>{company?.city}, </span>
-                <span>{company?.state}, </span>
-                <br />
-                <span>Pin:{company?.pincode}, </span>
-                <span>Phone:{company?.phone}, </span>
-                <span className="lowercase">{company?.email}</span>
-              </>
-            ) : (
-              <div className="text-xs text-right uppercase">
-                <p className="font-bold text-lg ">
-                  Topmost{" "}
-                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-20"></span>
-                </p>
-                <span> </span>
-                <span> </span>
-                <span> </span>
-                <br />
-                <span>
-                  Pin:{" "}
-                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-6">
-                    {" "}
-                    ,
-                  </span>{" "}
-                </span>{" "}
-                <span>
-                  Phone:{" "}
-                  <span className="ml-2  rounded-full animate-pulse bg-gray-300 px-10">
-                    {" "}
-                  </span>
-                  ,{" "}
-                </span>
-                <span className="lowercase ml-2  rounded-full animate-pulse bg-gray-300 px-12">
-                  {" "}
-                </span>
-              </div>
-            )}
+            <p className="font-bold text-lg ">
+              Topmost Dental and skin clinic
+              {/* Topmost {company?.branchName} */}
+            </p>
+            <span>{company?.address}, </span>
+            <span>{company?.city}, </span>
+            <span>{company?.state}, </span>
+            <br />
+            <span>Pin:{company?.pincode}, </span>
+            <span>Phone:{company?.phone}, </span>
+            <span className="lowercase">{company?.email}</span>
           </div>
         </div>
-
         <hr className="my-5" />
 
         <div className="flex justify-between border-b py-4">
@@ -730,4 +704,4 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
   );
 };
 
-export default AddMedicineInvoice;
+export default MedicineInvoiceEditPage;
