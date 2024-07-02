@@ -7,7 +7,6 @@ import TextFieldInput from "../../common/inputbox";
 import Axios from "../../../config/axios";
 import { useLocation } from "react-router-dom";
 import showAlert from "../../../commonFn/showAlert";
-import Select_Branch_ID from "../../ReviewPanel/commen/BranchIDSelection";
 import useToast from "../../../hooks/useToast";
 import AddNewMedicineRow from "./addNewMedicineRow";
 
@@ -45,8 +44,6 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   const [mainDepartmentID, setMainDepartmentID] = useState("");
 
   const jobRole = localStorage.getItem("jobRole");
-
-
 
   useEffect(() => {
     setConsultation(false);
@@ -95,41 +92,29 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
 
   useEffect(() => {
     if (invoice) {
-      setFormData((prev) => {
-        return {
-          ...prev,
-          invoiceID: invoice?.invoiceID,
-          patient: invoice?.patientID?._id,
-          doctorID: invoice?.doctorID._id,
-          DepartmentID: invoice?.DepartmentID?._id,
-          MainDepartmentID:
-            invoice?.DepartmentID?.MainDepartmentID ||
-            invoice?.MainDepartmentID,
-          paymentMethod: invoice?.paymentMethod.paymentMethod,
-          items: invoice?.items,
-          paymentMethodID: invoice?.paymentMethod.paymentMethodID,
-          totalAmount: invoice?.totalAmount,
-          totalDiscount: invoice?.totalDiscount,
-          amountToBePaid: invoice?.amountToBePaid,
-        };
-      });
+      setFormData((prev) => ({
+        ...prev,
+        invoiceID: invoice?.invoiceID,
+        patient: invoice?.patientID?.id,
+        doctorID: invoice?.doctorID._id,
+        DepartmentID: invoice?.DepartmentID?._id,
+        MainDepartmentID:
+          invoice?.DepartmentID?.MainDepartmentID || invoice?.MainDepartmentID,
+        paymentMethod: invoice?.paymentMethod.paymentMethod,
+        items: invoice?.items || [], // Ensure items is set correctly
+        paymentMethodID: invoice?.paymentMethod.paymentMethodID,
+        totalAmount: invoice?.totalAmount,
+        totalDiscount: invoice?.totalDiscount,
+        amountToBePaid: invoice?.amountToBePaid,
+      }));
     }
   }, [invoice]);
 
   useEffect(() => {
-    doctorHandle(invoice?.doctorID?.name);
+    if (invoice?.doctorID?.name) {
+      doctorHandle(invoice.doctorID.name);
+    }
   }, [doctorHandle, invoice?.doctorID?.name]);
-
-  //   const fetchData = useCallback(async () => {
-  //     try {
-  //       const response = await Axios.get(`/patient-list/${branch?.id}`, {
-  //         params: { search: searchTerm },
-  //       });
-  //       setPatientList(response?.data?.patients);
-  //     } catch (error) {
-  //       console.error("Error fetching patient list:", error);
-  //     }
-  //   }, [branch?.id, searchTerm]);
 
   useEffect(() => {
     const debounceFetch = setTimeout(() => {
@@ -150,19 +135,15 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
         `admin/medicine/get-invoice-dropdowns?BranchID=${invoice?.BranchID}&PatientID=${invoice?.patientID.PatientID}`
       );
       const data = response?.data;
-      console.log(data, "this is the response data");
+      // console.log(data, "this is the response data");
       setGetData(data);
       setFormData((prev) => ({
         ...prev,
         patient: data?.Patients,
         invoiceID: data?.nextInvoiceID,
       }));
-    //  setCompany((prev) => ({ ...prev, ...data?.branch }));
-    if(data?.branch){
-        setCompany(data.branch);
-    }
- 
-    console.log(company, "company");
+      setCompany((prev) => ({ ...prev, ...data?.branch }));
+
       const extractPatientTypes = (patientTypes) => {
         return patientTypes?.map((type) => type?.type);
       };
@@ -184,13 +165,11 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
     }
   }, [invoice?.BranchID, invoice?.invoiceID, invoice?.patientID._id]);
 
-
-
-//   useEffect(() => {
-//     if (branch?.id) {
-//       fetchInvoiceData();
-//     }
-//   }, [branch?.id, fetchInvoiceData, PatientID]);
+  useEffect(() => {
+    if (invoice?.BranchID) {
+      fetchInvoiceData();
+    }
+  }, [invoice?.BranchID, fetchInvoiceData]);
 
   const handlePaymentMethod = (Method) => {
     setFormData((prev) => {
@@ -355,20 +334,18 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   };
 
   const handlePatient = (patient) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      patient,
-      patientID: patient._id,
+    setFormData((prev) => ({
+      ...prev,
+      patient: patient,
     }));
+    setSearchTerm("");
   };
 
   const changeUser = () => {
-    setFormData((prev) => {
-      return {
-        ...prev,
-        patient: null,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      patient: null,
+    }));
   };
 
   const calculateGSTAmounts = (item) => {
@@ -389,6 +366,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   };
 
   console.log(formData, "this is the form data");
+  console.log(invoice, "this is the invoice data");
 
   return (
     <div className="bg-white w-full pl-4 pr-4">
@@ -413,31 +391,28 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
 
         <div className="flex justify-between border-b py-4">
           <div className="text-sm">
-            <p>
+            <p className="flex gap-2">
               <strong>Patient Details:</strong>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height={20}
+                viewBox="0 0 24 24"
+                width={20}
+                fill="#387ADF"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeUser();
+                }}
+                className="cursor-pointer hover:scale-125 duration-300"
+              >
+                <path d="M0 0h24v24H0V0z" fill="none" />
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+              </svg>
             </p>
-            {formData?.patient ? (
-              <div className="flex flex-row-reverse ">
-                <div>
-                  {!PatientID && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      height={20}
-                      viewBox="0 0 24 24"
-                      width={20}
-                      fill="#387ADF"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        changeUser();
-                      }}
-                      className="cursor-pointer hover:scale-125 duration-300"
-                    >
-                      <path d="M0 0h24v24H0V0z" fill="none" />
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                    </svg>
-                  )}
-                </div>
-                <div>
+
+            <>
+              {formData?.patient ? (
+                <>
                   <p>{formData?.patient?.Name}</p>
                   <p>{`${formData?.patient?.Gender}, Age: ${formData?.patient?.age}`}</p>
                   <p>{formData?.patient?.Address?.city}</p>
@@ -451,63 +426,36 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
                       ? formData?.patient?.patientTypeID?.type
                       : "N/A"
                   }`}</p>
+                </>
+              ) : (
+                <div className="max-w-md mx-auto relative">
+                  <TextFieldInput
+                    label="Search Patient"
+                    name="searchBox"
+                    fullWidth
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {!!patientList.length && !!searchTerm.length && (
+                    <div className="absolute top-[4rem] z-30 left-0 w-full bg-white border rounded-lg shadow mt-2">
+                      {patientList.map((patient, index) => (
+                        <div
+                          key={index}
+                          className="p-4 border-b hover:bg-slate-200 rounded-lg "
+                          onClick={() => {
+                            handlePatient(patient);
+                          }}
+                        >
+                          <p>{patient?.PatientID}</p>
+                          <p>{patient?.Name}</p>
+                          <p>{patient?.phone}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : PatientID ? (
-              <>
-                <span className="rounded-full animate-pulse bg-gray-300 px-16">
-                  {" "}
-                </span>
-                <p>
-                  <span className="rounded-full animate-pulse  bg-gray-300 px-8">
-                    {" "}
-                  </span>{" "}
-                  , Age:{" "}
-                  <span className="rounded-full animate-pulse bg-gray-300 px-4">
-                    {" "}
-                  </span>
-                </p>
-                <p>
-                  `VisitorType:`{" "}
-                  <span className="rounded-full animate-pulse bg-gray-300 px-6">
-                    {" "}
-                  </span>
-                </p>
-                <p>
-                  `PatientType:`{" "}
-                  <span className="rounded-full animate-pulse bg-gray-300 px-6">
-                    {" "}
-                  </span>
-                </p>
-              </>
-            ) : (
-              <div className="max-w-md mx-auto relative">
-                <TextFieldInput
-                  label="Search Patient"
-                  name="searchBox"
-                  fullWidth
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {!!patientList.length && !!searchTerm.length && (
-                  <div className="absolute top-[4rem] z-30 left-0 w-full bg-white border rounded-lg shadow mt-2">
-                    {patientList.map((patient, index) => (
-                      <div
-                        key={index}
-                        className="p-4 border-b hover:bg-slate-200 rounded-lg "
-                        onClick={() => {
-                          handlePatient(patient);
-                        }}
-                      >
-                        <p>{patient?.PatientID}</p>
-                        <p>{patient?.Name}</p>
-                        <p>{patient?.phone}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </>
           </div>
           <div className="text-center ">
             <p className="text-2xl font-bold uppercase">Invoice</p>
@@ -642,12 +590,6 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
               />
             </tbody>
           </table>
-
-          {/* {consultation && (
-            <div className="text-red-500 animate-pulse ps-8">
-              Patient Consultation Fee Required
-            </div>
-          )} */}
         </div>
 
         <div className="flex justify-between items-center pt-4">

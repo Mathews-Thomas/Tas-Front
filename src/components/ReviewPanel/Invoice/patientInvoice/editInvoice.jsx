@@ -107,6 +107,7 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
       });
     }
   }, [invoice]);
+  console.log(invoice, "invoice");
 
   useEffect(() => {
     doctorHandle(invoice?.doctorID?.name);
