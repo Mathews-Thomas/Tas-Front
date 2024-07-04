@@ -12,11 +12,11 @@ import jsPDF from "jspdf";
 import AWS from "aws-sdk";
 
 // AWS S3 Credentials
-const s3 = new AWS.S3({
-  accessKeyId: "AKIA5FTY7B2ZE3QD664W",
-  secretAccessKey: "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",
-  region: "us-east-1",
-});
+// const s3 = new AWS.S3({
+//   accessKeyId: "AKIA5FTY7B2ZE3QD664W",
+//   secretAccessKey: "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",
+//   region: "us-east-1",
+// });
 
 function MedicineTable({ data, loader, fetchData }) {
   const [branchDetails, setBranchDetails] = useState({});
