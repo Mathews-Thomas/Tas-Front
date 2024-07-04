@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import moment from "moment";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import CompanyLogo from "../../../assets/NavBar/logo 1.png";
 import SelectBox from "../../common/SelectBox";
@@ -26,12 +27,9 @@ const initialValue = {
 
 const date = new Date().toLocaleDateString();
 
-const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
+const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEditModal }) => {
   const tost = useToast();
-  const [branch, setBranch] = useState("");
-  const location = useLocation();
-  const PatientID = new URLSearchParams(location.search).get("PatientID");
-  const BranchID = new URLSearchParams(location.search).get("BranchID");
+
 
   const [company, setCompany] = useState({ Logo: CompanyLogo });
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,34 +43,6 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   const [mainDepartmentID, setMainDepartmentID] = useState("");
 
   const jobRole = localStorage.getItem("jobRole");
-
-  useEffect(() => {
-    setConsultation(false);
-    if (formData.patient) {
-      const today = new Date();
-      const lastConsultationDate = new Date(
-        formData?.patient?.lastConsultationFeeDate
-      );
-      const daysSinceLastConsultation = Math.floor(
-        (today - lastConsultationDate) / (1000 * 60 * 60 * 24)
-      );
-      if (formData?.patient?.lastConsultationFeeDate === undefined) {
-        setConsultation(true);
-      } else if (daysSinceLastConsultation > 30) {
-        setConsultation(true);
-      }
-    }
-  }, [formData.patient, formData.patient?.lastConsultationFeeDate]);
-
-  useEffect(() => {
-    setDoctor("");
-    setMedicine([]);
-    setFormData((prev) => ({
-      ...prev,
-      doctorID: "",
-      DepartmentID: "",
-    }));
-  }, [branch]);
 
   const doctorHandle = useCallback(
     (name) => {
@@ -113,37 +83,47 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   }, [invoice]);
 
   useEffect(() => {
+    console.log("Form data set:", formData);
+  }, [formData]);
+
+  useEffect(() => {
     if (invoice?.doctorID?.name) {
       doctorHandle(invoice.doctorID.name);
     }
   }, [doctorHandle, invoice?.doctorID?.name]);
 
+  const fetchUserData = useCallback(async () => {
+    try {
+      const response = await Axios.get(`/patient-list/${invoice?.BranchID}`, {
+        params: { search: searchTerm },
+      });
+      setPatientList(response?.data?.patients);
+    } catch (error) {
+      console.error("Error fetching patient list:", error);
+    }
+  }, [invoice?.BranchID, searchTerm]);
+
   useEffect(() => {
     const debounceFetch = setTimeout(() => {
       if (searchTerm.length > 0) {
-        if (branch?.id) {
-          fetchData();
+        if (invoice?.BranchID) {
+          fetchUserData();
         } else {
           tost("Please select Branch", "error");
         }
       }
     }, 500);
     return () => clearTimeout(debounceFetch);
-  }, [searchTerm, fetchData, branch?.id, tost]);
+  }, [searchTerm, invoice?.BranchID, tost, fetchUserData]);
 
   const fetchInvoiceData = useCallback(async () => {
     try {
       const response = await Axios.get(
-        `admin/medicine/get-invoice-dropdowns?BranchID=${invoice?.BranchID}&PatientID=${invoice?.patientID.PatientID}`
+        `admin/medicine/get-invoice-dropdowns?BranchID=${invoice?.BranchID}&PatientID=${invoice?.patientID?.PatientID}`
       );
       const data = response?.data;
       console.log(data, "this is the response data");
-     setGetData(data);
-      setFormData((prev) => ({
-        ...prev,
-        patient: data?.Patients,
-        invoiceID: invoice?.invoiceID,
-      }));
+      setGetData(data);
       setCompany((prev) => ({ ...prev, ...data?.branch }));
 
       const extractPatientTypes = (patientTypes) => {
@@ -159,13 +139,13 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
         patientTypes: extractPatientTypes(data?.PatientTypes),
         VisitorTypes: extractPatientTypes(data?.VisitorTypes),
         paymentMethods: extractPaymentMethods(data?.paymentMethods),
-        invoiceID: data?.nextInvoiceID,
+        invoiceID: invoice?.invoiceID,
         createdBy: data?.createdBy,
       });
     } catch (error) {
       console.error("Fetching invoice data failed:", error);
     }
-  }, [invoice?.BranchID, invoice?.invoiceID, invoice?.patientID._id]);
+  }, [invoice?.BranchID, invoice?.invoiceID, invoice?.patientID?._id]);
 
   useEffect(() => {
     if (invoice?.BranchID) {
@@ -184,32 +164,16 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
     });
   };
 
-  useEffect(() => {
-    if (doctor?.doctor?._id) {
-      const extractedMainDepartmentID =
-        doctor?.doctor?.DepartmentID?.MainDepartmentID;
-      setMainDepartmentID(extractedMainDepartmentID);
-      setFormData((prev) => ({
-        ...initialValue,
-        doctorID: doctor.doctor._id,
-        DepartmentID: doctor?.doctor?.DepartmentID?._id,
-        MainDepartmentID: doctor?.doctor?.DepartmentID?.MainDepartmentID,
-        patient: prev.patient,
-        invoiceID: prev?.invoiceID,
-      }));
-    }
-  }, [doctor, invoice?.invoiceID]);
-
   const resetForm = () => {
     setFormData(initialValue);
     setSearchTerm("");
     setDoctor("");
     fetchInvoiceData();
+    
     setRefreshList(true);
   };
 
   const onSubmit = () => {
-    // Validate required fields
     if (!formData?.invoiceID) {
       showAlert("Invoice ID", "", "warning");
       return;
@@ -239,35 +203,30 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
       return;
     }
 
-    // Parse numeric fields to ensure they are numbers
-    const parsedItems = formData.items.map((item) => ({
-      ...item,
-      quantity: Number(item.quantity),
-      unitPrice: Number(item.unitPrice),
-      discount: Number(item.discount),
-      totalAmount: Number(item.totalAmount),
-      amountToBePaid: Number(item.amountToBePaid),
-      GST: Number(item.GST),
-      gstAmount: Number(item.gstAmount),
-      baseAmount: Number(item.baseAmount),
-    }));
+    const updatedItems = formData.items.map((item) => {
+      const isProcedureIdObject =
+        typeof item.MedicineID === "object" &&
+        item.MedicineID !== null &&
+        "_id" in item.MedicineID;
+      return isProcedureIdObject
+        ? { ...item, MedicineID: item.MedicineID._id }
+        : { ...item };
+    });
 
-    const parsedFormData = {
+    const updatedData = {
       ...formData,
-      totalAmount: Number(formData.totalAmount),
-      totalDiscount: Number(formData.totalDiscount),
-      amountToBePaid: Number(formData.amountToBePaid),
-      items: parsedItems,
+      items: updatedItems,
+      BranchID: invoice.BranchID,
     };
 
-    Axios.post("admin/medicine/add-invoice", {
-      ...parsedFormData,
-      BranchID: branch?.id,
+    Axios.put("admin/medicine/edit-invoice", {
+      ...updatedData,
     })
       .then(() => {
         console.log(formData, "this is the form data");
         setFormData(initialValue);
-        showAlert("Success", "Invoice Added", "success");
+        showAlert("Success", "Medicine Invoice Edited", "success");
+        setShowEditModal(false);
         resetForm();
       })
       .catch(({ response }) => {
@@ -370,17 +329,13 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   console.log(formData, "this is the form data");
   console.log(invoice, "this is the invoice data");
 
-
   return (
     <div className="bg-white w-full pl-4 pr-4">
       <div className=" bg-white">
         <div className="flex justify-between items-center border-b pb-4">
           <img src={company.Logo} alt="Company Logo" className="h-20" />
           <div className="text-xs text-right uppercase">
-            <p className="font-bold text-lg ">
-              Topmost Dental and skin clinic
-              {/* Topmost {company?.branchName} */}
-            </p>
+            <p className="font-bold text-lg ">Topmost Dental and skin clinic</p>
             <span>{company?.address}, </span>
             <span>{company?.city}, </span>
             <span>{company?.state}, </span>
@@ -537,10 +492,10 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
                         {index + 1}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
-                        {item?.medicineName}
+                        {item?.MedicineID?.medicineName}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
-                        {item?.HSNCode}
+                        {item?.MedicineID?.HSNCode}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
                         {item?.quantity}
@@ -549,10 +504,14 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
                         {item?.unitPrice}
                       </td>
                       <td className="p-2 text-sm border-r border-black ">
-                        {item?.batchNumber}
+                        {item?.MedicineID?.batchNumber}
                       </td>
                       <td className="p-2 text-sm border-r border-black ">
-                        {item?.expiryDate}
+                        {item?.MedicineID?.expirationDate
+                          ? moment(item.MedicineID.expirationDate).format(
+                              "YYYY-MM-DD"
+                            )
+                          : "N/A"}
                       </td>
 
                       <td className="p-2 text-sm border-r  border-black">

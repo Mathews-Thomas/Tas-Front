@@ -15,7 +15,7 @@ const initialValue = {
   patient: null,
   doctorID: "",
   DepartmentID: "",
-  MainDepartmentID:"",
+  MainDepartmentID: "",
   paymentMethod: "",
   items: [],
   paymentMethodID: "",
@@ -96,7 +96,9 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
           patient: invoice?.patientID?._id,
           doctorID: invoice?.doctorID._id,
           DepartmentID: invoice?.DepartmentID?._id,
-          MainDepartmentID: invoice?.DepartmentID?.MainDepartmentID || invoice?.MainDepartmentID ,
+          MainDepartmentID:
+            invoice?.DepartmentID?.MainDepartmentID ||
+            invoice?.MainDepartmentID,
           paymentMethod: invoice?.paymentMethod.paymentMethod,
           items: invoice?.items,
           paymentMethodID: invoice?.paymentMethod.paymentMethodID,
@@ -176,7 +178,7 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
         ...prev,
         doctorID: doctor.doctor._id,
         DepartmentID: doctor?.doctor?.DepartmentID?._id,
-        MainDepartmentID:doctor?.doctor?.DepartmentID?.MainDepartmentID,
+        MainDepartmentID: doctor?.doctor?.DepartmentID?.MainDepartmentID,
         patient: prev.patient,
         invoiceID: invoice?.invoiceID,
       }));
@@ -195,11 +197,7 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
       return;
     }
     if (!formData?.patient) {
-      showAlert(
-        "Patient",
-        "Patient Details Required.!",
-        "warning"
-      );
+      showAlert("Patient", "Patient Details Required.!", "warning");
       return;
     }
     if (!formData?.doctorID) {
@@ -329,9 +327,9 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
           <img src={company.Logo} alt="Company Logo" className="h-20" />
           <div className="text-xs text-right uppercase">
             <p className="font-bold text-lg ">
-            Topmost Dental and skin clinic
+              Topmost Dental and skin clinic
               {/* Topmost {company?.branchName} */}
-              </p>
+            </p>
             <span>{company?.address}, </span>
             <span>{company?.city}, </span>
             <span>{company?.state}, </span>
