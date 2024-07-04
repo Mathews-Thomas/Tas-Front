@@ -143,7 +143,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
       setGetData(data);
       setFormData((prev) => ({
         ...prev,
-        patient: data?.Patients,
+      //  patient: data?.Patients,
         invoiceID: data?.nextInvoiceID,
       }));
       setCompany((prev) => ({ ...prev, ...data?.branch }));
@@ -536,7 +536,7 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
             )}
           </div>
           <div className="text-center ">
-            <p className="text-2xl font-bold uppercase">Invoice</p>
+            <p className="text-2xl font-bold uppercase"> MEDICINE Invoice</p>
           </div>
           <div className="text-sm xl:w-1/6">
             <div className="text-right">

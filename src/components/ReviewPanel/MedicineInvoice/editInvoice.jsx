@@ -25,6 +25,7 @@ const initialValue = {
 };
 
 const date = new Date().toLocaleDateString();
+
 const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   const tost = useToast();
   const [branch, setBranch] = useState("");
@@ -92,16 +93,17 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
 
   useEffect(() => {
     if (invoice) {
+      console.log("Setting formData from invoice:", invoice);
       setFormData((prev) => ({
         ...prev,
         invoiceID: invoice?.invoiceID,
-        patient: invoice?.patientID?.id,
+        patient: invoice?.patientID,
         doctorID: invoice?.doctorID._id,
         DepartmentID: invoice?.DepartmentID?._id,
         MainDepartmentID:
           invoice?.DepartmentID?.MainDepartmentID || invoice?.MainDepartmentID,
         paymentMethod: invoice?.paymentMethod.paymentMethod,
-        items: invoice?.items || [], // Ensure items is set correctly
+        items: invoice?.items || [],
         paymentMethodID: invoice?.paymentMethod.paymentMethodID,
         totalAmount: invoice?.totalAmount,
         totalDiscount: invoice?.totalDiscount,
@@ -135,12 +137,12 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
         `admin/medicine/get-invoice-dropdowns?BranchID=${invoice?.BranchID}&PatientID=${invoice?.patientID.PatientID}`
       );
       const data = response?.data;
-      // console.log(data, "this is the response data");
-      setGetData(data);
+      console.log(data, "this is the response data");
+     setGetData(data);
       setFormData((prev) => ({
         ...prev,
         patient: data?.Patients,
-        invoiceID: data?.nextInvoiceID,
+        invoiceID: invoice?.invoiceID,
       }));
       setCompany((prev) => ({ ...prev, ...data?.branch }));
 
@@ -368,6 +370,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
   console.log(formData, "this is the form data");
   console.log(invoice, "this is the invoice data");
 
+
   return (
     <div className="bg-white w-full pl-4 pr-4">
       <div className=" bg-white">
@@ -463,7 +466,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData }) => {
           <div className="text-sm xl:w-1/6">
             <div className="text-right">
               <p>
-                <strong>Invoice ID:</strong> {getInvoiceData?.invoiceID}
+                <strong>Invoice ID:</strong> {formData?.invoiceID}
               </p>
               <p>
                 <strong>Date:</strong> {date}

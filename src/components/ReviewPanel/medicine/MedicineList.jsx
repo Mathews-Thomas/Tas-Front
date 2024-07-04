@@ -1,10 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 import Axios from "../../../config/axios";
-import { Pagination, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material";
+import {
+  Pagination,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+} from "@mui/material";
 import Table from "./Table";
 import Select_Branch_ID from "../commen/BranchIDSelection";
 
-const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
+const MedicineList = ({ list = 10 }) => {
   const [loader, setLoader] = useState(true);
   const [medicineList, setMedicineList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -14,6 +21,7 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const [mainDepartments, setMainDepartments] = useState([]);
   const [filteredDepartments, setFilteredDepartments] = useState([]);
   const [selectedMainDepartment, setSelectedMainDepartment] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -22,14 +30,17 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
   const fetchData = useCallback(async () => {
     if (!branch?.id) return; // Ensure branch ID is present
     try {
-      const response = await Axios.get(`admin/medicine/get-medicine/${branch?.id}`, {
-        params: {
-          search: searchTerm,
-          page,
-          list,
-          DepartmentID : selectedMainDepartment
-        },
-      });
+      const response = await Axios.get(
+        `admin/medicine/get-medicine/${branch?.id}`,
+        {
+          params: {
+            search: searchTerm,
+            page,
+            list,
+            DepartmentID: selectedMainDepartment,
+          },
+        }
+      );
       setLoader(false);
       setMedicineList(response.data.medicines);
       setTotalPages(response.data.totalPages);
@@ -40,14 +51,12 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [branch?.id, searchTerm, page, list, selectedMainDepartment]);
 
-  console.log(medicineList,"this is the medicine list");
-
   useEffect(() => {
     if (branch?.id) {
       setLoader(true);
       fetchData();
     }
-  }, [branch, page, list, fetchData]);
+  }, [branch, page, list, fetchData, refresh]);
 
   useEffect(() => {
     if (searchTerm || refresh) {
@@ -57,27 +66,31 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
       }, 500); // Debounce time
       return () => clearTimeout(handleSearch);
     }
-  }, [searchTerm, fetchData, refresh, setRefresh]);
+  }, [searchTerm, fetchData]);
 
   useEffect(() => {
-    Axios.get('/admin/get-addOns')
+    Axios.get("/admin/get-addOns")
       .then((resp) => {
-        const mainDepartmentsData = resp?.data?.MainDepartments?.map(Main => ({
-          option: Main?.Name,
-          id: Main?._id,
-          subOption: Main?.BranchID?.branchName,
-          BranchID: Main?.BranchID?._id
-        }));
+        const mainDepartmentsData = resp?.data?.MainDepartments?.map(
+          (Main) => ({
+            option: Main?.Name,
+            id: Main?._id,
+            subOption: Main?.BranchID?.branchName,
+            BranchID: Main?.BranchID?._id,
+          })
+        );
         setMainDepartments(mainDepartmentsData);
       })
       .catch((err) => {
-        console.error('Error fetching branches and main departments:', err);
+        console.error("Error fetching branches and main departments:", err);
       });
   }, []);
 
   useEffect(() => {
     if (branch?.id) {
-      const filtered = mainDepartments.filter(dept => dept.BranchID === branch.id);
+      const filtered = mainDepartments.filter(
+        (dept) => dept.BranchID === branch.id
+      );
       setFilteredDepartments(filtered);
       setSelectedMainDepartment(""); // Reset department selection when branch changes
     } else {
@@ -85,12 +98,24 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
     }
   }, [branch, mainDepartments]);
 
-  const columns = ["medicineName", "manufacturerName", "quantity", "price", "createdBy"]; // Adjust as per your data structure
-  const tableHeaders = ["Medicine Name", "Manufacture", "Quantity", "Price", "Created By"]; // Adjust as per your data structure
+  const columns = [
+    "medicineName",
+    "manufacturerName",
+    "quantity",
+    "price",
+    "createdBy",
+  ]; // Adjust as per your data structure
+  const tableHeaders = [
+    "Medicine Name",
+    "Manufacture",
+    "Quantity",
+    "Price",
+    "Created By",
+  ]; // Adjust as per your data structure
 
   const endpoints = {
-    update: 'medicine/update-status', // Adjust the endpoint for updating medicine status
-    approve: 'medicine/approve', // Adjust the endpoint for approving medicine
+    update: "medicine/update-status", // Adjust the endpoint for updating medicine status
+    approve: "medicine/approve", // Adjust the endpoint for approving medicine
   };
 
   return (
@@ -104,7 +129,7 @@ const MedicineList = ({ refresh, setRefresh, list = 10 }) => {
         <div className="w-full flex justify-end items-center">
           <div className="flex gap-5 justify-end items-center w-full">
             <Select_Branch_ID value={branch} onChange={setBranch} />
-            <FormControl variant="outlined" className='w-[25rem]'>
+            <FormControl variant="outlined" className="w-[25rem]">
               <InputLabel id="department-label">Department</InputLabel>
               <Select
                 labelId="department-label"

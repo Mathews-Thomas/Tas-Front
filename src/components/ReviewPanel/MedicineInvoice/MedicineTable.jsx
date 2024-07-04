@@ -5,8 +5,18 @@ import logo from "../../../assets/NavBar/logo 1.png";
 import Axios from "../../../config/axios";
 import moment from "moment";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPrint } from "@fortawesome/free-solid-svg-icons";
+import { faDownload, faMessage, faPrint } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../../../commonFn/Datefn";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import AWS from "aws-sdk";
+
+// AWS S3 Credentials
+const s3 = new AWS.S3({
+  accessKeyId: "AKIA5FTY7B2ZE3QD664W",
+  secretAccessKey: "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",
+  region: "us-east-1",
+});
 
 function MedicineTable({ data, loader, fetchData }) {
   const [branchDetails, setBranchDetails] = useState({});
@@ -14,16 +24,15 @@ function MedicineTable({ data, loader, fetchData }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [uploadLocation, setUploadLocation] = useState(null);
+  const [customPhoneNumber, setCustomPhoneNumber] = useState("");
+  const [isCustomNumber, setIsCustomNumber] = useState(false);
 
   const fetchBranchDetails = useCallback(
     async (BranchID) => {
-      // Early return if data is already cached
-      if (branchDetails[BranchID]) {
-        return branchDetails[BranchID];
-      }
+      if (branchDetails[BranchID]) return branchDetails[BranchID];
       try {
         const { data } = await Axios.get(`/get-branch/${BranchID}`);
-        // Cache fetched data
         setBranchDetails((prev) => ({
           ...prev,
           [BranchID]: data,
@@ -37,19 +46,11 @@ function MedicineTable({ data, loader, fetchData }) {
     [branchDetails]
   );
 
-  // date formatting
-  const formatDate1 = (dateString) => {
-    const options = { year: "numeric", month: "long", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
-
-  // edit click function
   const handleEditClick = (invoice) => {
     setInvoice(invoice);
     setShowEditModal(true);
   };
 
-  // row click function
   const handleRowClick = useCallback(
     async (row) => {
       await fetchBranchDetails(row.BranchID);
@@ -59,30 +60,248 @@ function MedicineTable({ data, loader, fetchData }) {
     [fetchBranchDetails]
   );
 
-  //  print function
   const invoicemodelprint = () => {
     const printWindow = window.open(" ", "_blank");
-    document.getElementById("PrintButton").hidden = true;
+    const printButtons = document.querySelectorAll(
+      "#PrintButton, #CustomButton, #PatientButton, #DownloadButton"
+    );
 
-    const invoice = document.querySelector("#invoicemodelid").outerHTML; // Adjust the selector to target your specific table
+    printButtons.forEach((button) => button.style.display = "none");
+
+    const invoice = document.querySelector("#invoicemodelid").outerHTML;
     const tailwindCssLink =
       '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">';
     printWindow.document.write(`
-  <html>
-    <head> 
-      ${tailwindCssLink}  
-    </head>
-    <body>
-      ${invoice}  
-    </body>
-  </html> `);
+      <html>
+        <head> 
+          ${tailwindCssLink}  
+        </head>
+        <body>
+          ${invoice}  
+        </body>
+      </html>`);
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
     }, 100);
-    document.getElementById("PrintButton").hidden = false;
+
+    printButtons.forEach((button) => button.style.display = "inline-block");
+  };
+
+  const downloadPDF = async () => {
+    const printButtons = document.querySelectorAll(
+      "#PrintButton, #DownloadButton, #PatientButton, #CustomButton"
+    );
+
+    printButtons.forEach((button) => button.classList.add("hidden"));
+
+    const element = document.querySelector("#invoicemodelid");
+
+    const canvas = await html2canvas(element, { scale: 1 });
+
+    const imgData = canvas.toDataURL("image/png", 0.8);
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("invoice.pdf");
+    setShowModal(false);
+  };
+
+  const generatePDFBlob = async () => {
+    const element = document.querySelector("#invoicemodelid");
+    const canvas = await html2canvas(element, { scale: 2, logging: false });
+    const imgData = canvas.toDataURL("image/jpeg", 0.98);
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+
+    return pdf.output("blob");
+  };
+
+  const uploadToS3 = async (pdfBlob, key) => {
+    const params = {
+      Bucket: "medicine-invoice",
+      Key: key,
+      Body: pdfBlob,
+      ContentType: "application/pdf",
+    };
+    return new Promise((resolve, reject) => {
+      s3.upload(params, (err, data) => {
+        if (err) {
+          console.error("Error uploading to S3:", err);
+          reject(err);
+        } else {
+          resolve(data.Location);
+        }
+      });
+    });
+  };
+
+  const sendWhatsapp = (uploadLocation, phoneNumber) => {
+    const message = `Here is Your invoice: ${uploadLocation}`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(whatsappURL, "_blank");
+  };
+
+  const handleSendWhatsapp = async (phoneNumber) => {
+    try {
+      const printButtons = document.querySelectorAll(
+        "#PrintButton, #CustomButton, #PatientButton, #DownloadButton"
+      );
+      printButtons.forEach((button) => button.classList.add("hidden"));
+
+      const pdfBlob = await generatePDFBlob();
+      const patientName = selectedRow?.patientID?.Name;
+      const key = `${patientName}.pdf`;
+
+      setShowModal(false);
+      const toastContainer = document.createElement("div");
+
+      toastContainer.innerHTML = `
+      <div class="toast-container fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2  bg-white p-6 rounded-lg shadow-2xl border-gray-500 z-50 text-center">
+        <div class="text-2xl font-bold mb-4 text-gray-800">Send Invoice</div>
+        <div class="text-lg font-semibold mb-4 text-gray-600">Do you want to send the invoice to the patient's WhatsApp?</div>
+        <div class="flex justify-center gap-4">
+          <button id="sendInvoiceBtn" class="toast-button bg-green-500 text-white rounded px-6 py-2 font-medium transition duration-300 ease-in-out hover:bg-green-600 shadow-md">Send</button>
+          <button id="closeToastBtn" class="toast-button bg-red-500 text-white rounded px-6 py-2 font-medium transition duration-300 ease-in-out hover:bg-red-600 shadow-md">Close</button>
+        </div>
+      </div>
+    `;
+
+      // Insert the style tag separately
+      const style = document.createElement("style");
+      style.innerHTML = `
+      .toast-container {
+        animation: slide-in 0.5s ease-out;
+      }
+      @keyframes slide-in {
+        from {
+          transform: translate(-50%, -100%);
+          opacity: 0;
+        }
+        to {
+          transform: translate(-50%, -50%);
+          opacity: 1;
+        }
+      }
+    `;
+
+      document.head.appendChild(style);
+      document.body.appendChild(toastContainer);
+
+      const sendInvoiceBtn = toastContainer.querySelector("#sendInvoiceBtn");
+      const closeToastBtn = toastContainer.querySelector("#closeToastBtn");
+
+      sendInvoiceBtn.addEventListener("click", async () => {
+        const location = await uploadToS3(pdfBlob, key);
+        setUploadLocation(location);
+        sendWhatsapp(location, phoneNumber);
+        document.body.removeChild(toastContainer);
+      });
+
+      closeToastBtn.addEventListener("click", () => {
+        document.body.removeChild(toastContainer);
+      });
+    } catch (error) {
+      console.error("Error in handleSendWhatsapp function:", error);
+    }
+  };
+
+  const handleCustomSendWhatsapp = async () => {
+    try {
+      const printButtons = document.querySelectorAll(
+        "#PrintButton, #CustomButton, #CloseButton, #PatientButton, #DownloadButton"
+      );
+      printButtons.forEach((button) => button.classList.add("hidden"));
+
+      const pdfBlob = await generatePDFBlob();
+      const patientName = selectedRow?.patientID?.Name;
+      const key = `${patientName}.pdf`;
+
+      const showCustomWhatsAppForm = () => {
+        setShowModal(false);
+        const formContainer = document.createElement("div");
+        formContainer.innerHTML = `
+          <div class="toast-container fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[30rem] bg-white p-6 rounded-lg shadow-2xl border-gray-500 z-50">
+              <button id="closeFormBtn" class="absolute top-0 right-0 mr-4 mt-2 text-2xl font-bold text-gray-500 hover:text-gray-700 cursor-pointer">&times;</button>
+              <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Send WhatsApp Message</h2>
+              <label for="whatsappNumber" class="block text-gray-700 text-sm font-semibold mb-2">Enter Custom WhatsApp number:</label>
+              <input type="text" id="whatsappNumber" name="whatsappNumber" class="block w-full border border-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter WhatsApp number">
+              <button id="sendWhatsAppBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Send WhatsApp Message</button>
+          </div>
+      `;
+        // Insert the style tag separately
+        const style = document.createElement("style");
+        style.innerHTML = `
+        .toast-container {
+          animation: slide-in 0.5s ease-out;
+        }
+        @keyframes slide-in {
+          from {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+          }
+        }
+      `;
+
+        const sendWhatsAppBtn = formContainer.querySelector("#sendWhatsAppBtn");
+        const closeFormBtn = formContainer.querySelector("#closeFormBtn");
+
+        sendWhatsAppBtn.addEventListener("click", async () => {
+          const phoneNumber =
+            formContainer.querySelector("#whatsappNumber").value;
+          if (phoneNumber) {
+            await sendWhatsAppMessage(phoneNumber, pdfBlob, key);
+
+            document.body.removeChild(formContainer);
+            printButtons.forEach((button) => button.classList.remove("hidden"));
+          }
+        });
+
+        closeFormBtn.addEventListener("click", () => {
+          document.body.removeChild(formContainer);
+          printButtons.forEach((button) => button.classList.remove("hidden"));
+        });
+
+        document.body.appendChild(formContainer);
+      };
+
+      showCustomWhatsAppForm();
+    } catch (error) {
+      console.error("Error in handleSendWhatsapp function:", error);
+    }
+  };
+
+  const sendWhatsAppMessage = async (phoneNumber, pdfBlob, key) => {
+    try {
+      const location = await uploadToS3(pdfBlob, key);
+      setUploadLocation(location);
+      const message = `Here is Your invoice : ${location}`;
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+      window.open(whatsappURL, "_blank");
+    } catch (error) {
+      console.error("Error sending WhatsApp message:", error);
+    }
   };
 
   return (
@@ -146,7 +365,7 @@ function MedicineTable({ data, loader, fetchData }) {
                   {invoice?.invoiceID}
                 </td>
                 <td className="px-6 py-3 border-b border-gray-200 capitalize text-center">
-                  {formatDate1(invoice?.createdAt)}
+                  {moment(invoice?.createdAt).format("YYYY-MM-DD")}
                 </td>
                 <td className="px-6 py-3 border-b border-gray-200 capitalize text-center">
                   {invoice?.patientID?.Name}
@@ -172,7 +391,7 @@ function MedicineTable({ data, loader, fetchData }) {
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
-                  className="px-6 py-3  border-gray-200 capitalize flex gap-3 justify-center items-center   "
+                  className="px-6 py-3  border-gray-200 capitalize flex gap-3 justify-center items-center"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -188,7 +407,6 @@ function MedicineTable({ data, loader, fetchData }) {
                     <path d="M0 0h24v24H0V0z" fill="none" />
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                   </svg>
-
                   <svg
                     onClick={() => {
                       index === 0
@@ -220,7 +438,7 @@ function MedicineTable({ data, loader, fetchData }) {
       {showModal && (
         <div className=" selectcolumn fixed inset-0 flex h-auto  items-center justify-center z-[99]">
           <div
-            className="bg-black bg-opacity-50 absolute inset-0"
+            className="bg-black bg-opacity-80 absolute inset-0"
             onClick={() => {
               setSelectedRow(null);
               setShowModal(false);
@@ -228,18 +446,15 @@ function MedicineTable({ data, loader, fetchData }) {
           ></div>
           <div
             id="invoicemodelid"
-            className="relative bg-white p-4  mx-auto z-10 rounded shadow-md print:w-full print:h-full w-[75%] "
+            className="relative bg-white p-4  mx-auto z-10 rounded shadow-md print:w-full print:h-full w-[75%]"
           >
-            {/* Display detailed view content */}
             {selectedRow && (
               <div className="p-5 bg-white">
-                {/* Header with Logo and Company Address */}
                 <div className="flex justify-between items-center border-b pb-4">
                   <img src={logo} alt="Company Logo" className="h-20" />
                   <div className="text-xs text-right uppercase">
                     <p className="font-bold text-lg ">
                       Topmost Dental and skin clinic
-                      {/* Topmost {branchDetails[selectedRow?.BranchID].branchName} */}
                     </p>
                     <span>
                       {branchDetails[selectedRow?.BranchID].address},{" "}
@@ -258,8 +473,6 @@ function MedicineTable({ data, loader, fetchData }) {
                     </span>
                   </div>
                 </div>
-
-                {/* Patient Details and Invoice Info */}
                 <div className="flex justify-between border-b py-2">
                   <div className="text-xs">
                     <p>
@@ -292,13 +505,9 @@ function MedicineTable({ data, loader, fetchData }) {
                     </p>
                   </div>
                 </div>
-
-                {/* Invoice Title */}
                 <div className="text-center my-4">
                   <p className="text-xl font-bold uppercase">Invoice</p>
                 </div>
-
-                {/* Items Table */}
                 <div className="mb-4">
                   <table className="min-w-full">
                     <thead className="border-b">
@@ -347,8 +556,6 @@ function MedicineTable({ data, loader, fetchData }) {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Footer with Generated By, Total Amount, etc. */}
                 <div className="flex justify-between items-center pt-2">
                   <div className="text-xs">
                     <p>
@@ -373,13 +580,57 @@ function MedicineTable({ data, loader, fetchData }) {
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-end mt-5">
+                {isCustomNumber && (
+                  <div className="mt-4">
+                    <input
+                      type="text"
+                      value={customPhoneNumber}
+                      onChange={(e) => setCustomPhoneNumber(e.target.value)}
+                      placeholder="Enter custom phone number"
+                      className="border p-2 w-full rounded"
+                    />
+                    <button
+                      onClick={handleCustomSend}
+                      className="border bg-[#652D91] rounded-lg font-semibold w-1/2 items-center py-2 mt-2 text-white"
+                    >
+                      Send to Custom Whatsapp
+                    </button>
+                  </div>
+                )}
+                <div className="flex justify-end mt-5 gap-4">
+                  {!isCustomNumber && (
+                    <>
+                      <button
+                        onClick={() => handleSendWhatsapp(selectedRow?.patientID?.phone)}
+                        id="PatientButton"
+                        className="print:hidden border bg-[#652D91] rounded-lg font-semibold w-[13%] py-1 text-white"
+                      >
+                        <FontAwesomeIcon icon={faMessage} /> Send to Patient
+                        Whatsapp
+                      </button>
+                      <button
+                        onClick={handleCustomSendWhatsapp}
+                        id="CustomButton"
+                        className="print:hidden border bg-[#652D91] rounded-lg font-semibold w-[13%] py-1 text-white"
+                      >
+                        <FontAwesomeIcon icon={faMessage} /> Send to Custom
+                        Whatsapp
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={invoicemodelprint}
                     id="PrintButton"
                     className="print:hidden border bg-[#652D91] rounded-lg font-semibold w-[13%] py-1 text-white"
                   >
                     <FontAwesomeIcon icon={faPrint} /> Print
+                  </button>
+                  <button
+                    onClick={downloadPDF}
+                    id="DownloadButton"
+                    className="print:hidden border bg-[#652D91] rounded-lg font-semibold w-[13%] py-1 text-white"
+                  >
+                    <FontAwesomeIcon icon={faDownload} /> Download
                   </button>
                 </div>
               </div>

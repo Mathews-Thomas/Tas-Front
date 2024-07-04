@@ -73,10 +73,10 @@ const MedicineEditForm = ({
 
   // form data extraction
   const extractFormDataValues = (formData) => ({
-    branch: formData.branch.id || "",
+    branch: formData.branch?.id || "",
     departments: formData.departments || [],
     medicineName: formData.medicineName || "",
-    manufactureName: formData.manufacturerName || "",
+    manufacturerName: formData.manufacturerName || "",
     quantity: formData.quantity || "",
     price: formData.price || "",
     batchNumber: formData.batchNumber || "",
@@ -91,11 +91,11 @@ const MedicineEditForm = ({
 
   const formik = useFormik({
     initialValues: {
-      id: "" || "",
+      id: "",
       branch: "",
       departments: [],
       medicineName: "",
-      manufactureName: "",
+      manufacturerName: "",
       quantity: "",
       price: "",
       batchNumber: "",
@@ -131,11 +131,9 @@ const MedicineEditForm = ({
       }
       if (!values.expirationDate) {
         errors.expirationDate = "Expiration Date is required";
-      } else if (new Date(values.expirationDate) <= new Date()) {
-        errors.expirationDate = "Expiration Date must be in the future";
       }
-      if (!values.manufactureName) {
-        errors.manufactureName = "Manufacture Name is required";
+      if (!values.manufacturerName) {
+        errors.manufacturerName = "Manufacturer Name is required";
       }
       if (!values.gstOption) {
         errors.gstOption = "GST Option is required";
@@ -149,12 +147,11 @@ const MedicineEditForm = ({
       try {
         console.log(values);
         await Axios.put("/admin/medicine/edit-medicine", values);
-        console.log("Form data updated successfully");
         toast.success("Medicine updated successfully");
-        console.log(values, "the submitted values");
         setSubmitting(false);
         resetForm();
         onClose();
+        setRefresh(true);
       } catch (error) {
         console.error("Error updating form data:", error);
         toast.error(error);
@@ -171,8 +168,8 @@ const MedicineEditForm = ({
 
   // cancel function
   const handleCancel = () => {
-    formik.handleReset(); 
-    onClose(); 
+    formik.handleReset();
+    onClose();
   };
 
   useEffect(() => {
@@ -287,49 +284,47 @@ const MedicineEditForm = ({
                         key !== "_id" &&
                         key !== "gstOption" &&
                         key !== "gst" &&
-                        key !== "manufactureName"
+                        key !== "manufacturerName"
                     )
                     .map((key) => (
                       <Grid item xs={12} sm={6} key={key}>
                         {key === "approved" ? (
-                         
-                            <FormControl
-                              variant="outlined"
-                              fullWidth
-                              margin="normal"
+                          <FormControl
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                          >
+                            <InputLabel id="approved-label">
+                              Approved
+                            </InputLabel>
+                            <Select
+                              labelId="approved-label"
+                              id="approved"
+                              name="approved"
+                              value={formik.values.approved}
+                              onChange={formik.handleChange}
+                              label="Approved"
+                              error={
+                                formik.touched.approved &&
+                                Boolean(formik.errors.approved)
+                              }
+                              disabled={formik.values.approved === "true"}
                             >
-                              <InputLabel id="approved-label">
-                                Approved
-                              </InputLabel>
-                              <Select
-                                labelId="approved-label"
-                                id="approved"
-                                name="approved"
-                                value={formik.values.approved}
-                                onChange={formik.handleChange}
-                                label="Approved"
-                                error={
-                                  formik.touched.approved &&
-                                  Boolean(formik.errors.approved)
-                                }
-                                disabled={formik.values.approved === "true"}
-                              >
-                                <MenuItem value="true">true</MenuItem>
-                                <MenuItem value="false">false</MenuItem>
-                              </Select>
-                              {formik.touched.approved &&
-                                formik.errors.approved && (
-                                  <div
-                                    style={{
-                                      color: "red",
-                                      marginTop: "0.5rem",
-                                    }}
-                                  >
-                                    {formik.errors.approved}
-                                  </div>
-                                )}
-                            </FormControl>
-                          
+                              <MenuItem value="true">true</MenuItem>
+                              <MenuItem value="false">false</MenuItem>
+                            </Select>
+                            {formik.touched.approved &&
+                              formik.errors.approved && (
+                                <div
+                                  style={{
+                                    color: "red",
+                                    marginTop: "0.5rem",
+                                  }}
+                                >
+                                  {formik.errors.approved}
+                                </div>
+                              )}
+                          </FormControl>
                         ) : (
                           <TextField
                             id={key}
@@ -361,21 +356,21 @@ const MedicineEditForm = ({
                   <>
                     <Grid item xs={12} sm={6}>
                       <TextField
-                        id="manufactureName"
-                        name="manufactureName"
-                        label="Manufacture Name"
+                        id="manufacturerName"
+                        name="manufacturerName"
+                        label="Manufacturer Name"
                         variant="outlined"
                         fullWidth
                         margin="normal"
-                        value={formik.values.manufactureName}
+                        value={formik.values.manufacturerName}
                         onChange={formik.handleChange}
                         error={
-                          formik.touched.manufactureName &&
-                          Boolean(formik.errors.manufactureName)
+                          formik.touched.manufacturerName &&
+                          Boolean(formik.errors.manufacturerName)
                         }
                         helperText={
-                          formik.touched.manufactureName &&
-                          formik.errors.manufactureName
+                          formik.touched.manufacturerName &&
+                          formik.errors.manufacturerName
                         }
                       />
                     </Grid>
