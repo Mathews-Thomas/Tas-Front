@@ -142,6 +142,7 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
 
     printButtons.forEach((button) => (button.style.display = "inline-block"));
   };
+ console.log(data, "this is the data");
 
   const downloadPDF = async () => {
     const element = document.querySelector("#invoicemodelid");
