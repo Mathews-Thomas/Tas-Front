@@ -12,9 +12,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { formatDate } from "../../../commonFn/Datefn";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import AWS from "aws-sdk";
 import Swal from "sweetalert2";
+
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 // AWS S3 Credentials
 const s3 = new AWS.S3({
@@ -62,7 +65,6 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
     const hoursDiff = now.diff(invoiceCreatedAt, "hours");
     const daysDiff = now.diff(invoiceCreatedAt, "days");
     const jobRole = localStorage.getItem("jobRole");
-    // Assuming 'reception' role has 8 hours to delete and 'admin' has 30 days
     let canDelete = false;
     if (jobRole === "user" && hoursDiff <= 8) {
       canDelete = true;
@@ -71,7 +73,6 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
     }
 
     if (canDelete) {
-      // SweetAlert2 confirmation dialog
       Swal.fire({
         title: "Are you sure?",
         text: "You won't be able to revert this!",
@@ -82,10 +83,9 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
         confirmButtonText: "Yes, delete it!",
       }).then((result) => {
         if (result.isConfirmed) {
-          // Proceed with the delete operation
           Axios.delete(`admin/medicine/delete-invoice/${invoice._id}`)
             .then(() => {
-              fetchData(); // Refresh the data
+              fetchData();
               Swal.fire("Deleted!", "The invoice has been deleted.", "success");
             })
             .catch((error) => {
@@ -144,45 +144,50 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
   };
 
   const downloadPDF = async () => {
-    const printButtons = document.querySelectorAll(
-      "#PrintButton, #DownloadButton, #PatientButton, #CustomButton"
-    );
-
-    printButtons.forEach((button) => button.classList.add("hidden"));
-
     const element = document.querySelector("#invoicemodelid");
+    const buttons = document.querySelectorAll("#PrintButton, #DownloadButton, #PatientButton, #CustomButton");
+    buttons.forEach(button => button.style.display = "none");
 
-    const canvas = await html2canvas(element, { scale: 1 });
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
 
-    const imgData = canvas.toDataURL("image/png", 0.8);
-    const pdf = new jsPDF("p", "mm", "a4");
+    buttons.forEach(button => button.style.display = "inline-block");
 
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const docDefinition = {
+      content: [
+        {
+          image: imgData,
+          width: 500,
+        },
+      ],
+    };
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save("invoice.pdf");
-    setShowModal(false);
+    pdfMake.createPdf(docDefinition).download("invoice.pdf");
   };
 
   const generatePDFBlob = async () => {
     const element = document.querySelector("#invoicemodelid");
-    const canvas = await html2canvas(element, { scale: 2, logging: false });
-    const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
+    const buttons = document.querySelectorAll("#PrintButton, #DownloadButton, #PatientButton, #CustomButton");
+    buttons.forEach(button => button.style.display = "none");
+
+    const canvas = await html2canvas(element, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    const docDefinition = {
+      content: [
+        {
+          image: imgData,
+          width: 500,
+        },
+      ],
+    };
+
+    return new Promise((resolve, reject) => {
+      pdfMake.createPdf(docDefinition).getBlob((blob) => {
+        resolve(blob);
+      });
     });
-
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
-
-    return pdf.output("blob");
   };
 
   const uploadToS3 = async (pdfBlob, key) => {
@@ -236,7 +241,6 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
       </div>
     `;
 
-      // Insert the style tag separately
       const style = document.createElement("style");
       style.innerHTML = `
       .toast-container {
@@ -298,7 +302,7 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
               <button id="sendWhatsAppBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Send WhatsApp Message</button>
           </div>
       `;
-        // Insert the style tag separately
+
         const style = document.createElement("style");
         style.innerHTML = `
         .toast-container {
@@ -613,7 +617,6 @@ function MedicineTable({ data, loader, fetchData, setRefresh }) {
                   <div className="text-xs">
                     <p>
                       <strong>Generated By:</strong>{" "}
-                      {/* {selectedRow?.items?.[0]?.MedicineID?.createdBy} */}
                       {selectedRow?.createdBy}
                     </p>
                     <p>

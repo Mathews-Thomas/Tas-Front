@@ -46,6 +46,7 @@
     "mdb-react-ui-kit": "^8.0.0",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.45",
+    "pdfmake": "^0.2.10",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-date-range": "^1.4.0",
