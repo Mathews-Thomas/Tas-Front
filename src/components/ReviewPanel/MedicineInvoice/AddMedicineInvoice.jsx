@@ -267,9 +267,10 @@ const AddMedicineInvoice = ({ setRefreshList }) => {
       BranchID: branch?.id,
     })
       .then(() => {
-        console.log(formData, "this is the form data");
+       
         setFormData(initialValue);
         showAlert("Success", "Invoice Added", "success");
+        setRefreshList(true);
         resetForm();
       })
       .catch(({ response }) => {

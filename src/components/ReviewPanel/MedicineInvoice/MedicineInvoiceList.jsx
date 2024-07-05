@@ -5,13 +5,14 @@ import Axios from "../../../config/axios";
 import { Pagination } from "@mui/material";
 import Select_Branch_ID from "../commen/BranchIDSelection";
 
-const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
+const MedicineInvoiceList = ({ list = 20 }) => {
   const [loader, setLoader] = useState(true);
   const [medicineInvoiceList, setMedicineInvoiceList] = useState([]);
   const [branch, setBranch] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1); // Current page
-  const [totalPages, setTotalPages] = useState(0); // Total number of pages
+  const [totalPages, setTotalPages] = useState(0); 
+  const [refresh, setRefresh] = useState(false);
 
   const handlePageChange = (event, value) => {
     setPage(value);
@@ -31,7 +32,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
       .catch((error) => {
         console.error("Error fetching medicine list:", error);
       });
-  }, [branch?.id, page, searchTerm, list]);
+  }, [branch?.id, page, searchTerm, list,refresh]);
 
   useEffect(() => {
     const debounceFetch = setTimeout(() => {
@@ -45,7 +46,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
   useEffect(() => {
     fetchData();
   }, [branch?.id, page, fetchData]);
- // console.log(medicineInvoiceList,"medicineInvoiceList")
+ 
 
   return (
     <div className="topbar p-10 bg-white">
@@ -74,6 +75,7 @@ const MedicineInvoiceList = ({ setRefresh, refresh, list = 20 }) => {
         data={medicineInvoiceList}
         fetchData={fetchData}
         loader={loader}
+        setRefresh={setRefresh}
       />
       <Pagination
         className="mt-5"

@@ -137,6 +137,7 @@ function AddNewMedicineRow({ medicines, onAdd, sl }) {
       gstAmount: 0,
     });
   };
+  console.log(newItem, "this is the new item");
 
   return (
     <tr className="border-none">

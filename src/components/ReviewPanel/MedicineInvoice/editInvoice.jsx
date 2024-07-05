@@ -27,9 +27,14 @@ const initialValue = {
 
 const date = new Date().toLocaleDateString();
 
-const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEditModal }) => {
+const MedicineInvoiceEditPage = ({
+  setRefreshList,
+  invoice,
+  fetchData,
+  setShowEditModal,
+ 
+}) => {
   const tost = useToast();
-
 
   const [company, setCompany] = useState({ Logo: CompanyLogo });
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +44,6 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
   const [doctor, setDoctor] = useState({ name: "", doctor: "" });
   const [medicine, setMedicine] = useState([]);
   const [getData, setGetData] = useState(initialValue);
-  const [consultation, setConsultation] = useState(false);
   const [mainDepartmentID, setMainDepartmentID] = useState("");
 
   const jobRole = localStorage.getItem("jobRole");
@@ -127,7 +131,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
       setCompany((prev) => ({ ...prev, ...data?.branch }));
 
       const extractPatientTypes = (patientTypes) => {
-        return patientTypes?.map((type) => type?.type);
+        return patientTypes.map((type) => type.type);
       };
 
       const extractPaymentMethods = (paymentMethods) => {
@@ -151,7 +155,12 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
     if (invoice?.BranchID) {
       fetchInvoiceData();
     }
-  }, [invoice?.BranchID, fetchInvoiceData]);
+  }, [
+    invoice?.BranchID,
+    invoice?.invoiceID,
+    invoice?.patientID._id,
+    fetchInvoiceData,
+  ]);
 
   const handlePaymentMethod = (Method) => {
     setFormData((prev) => {
@@ -169,7 +178,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
     setSearchTerm("");
     setDoctor("");
     fetchInvoiceData();
-    
+
     setRefreshList(true);
   };
 
@@ -226,6 +235,7 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
         console.log(formData, "this is the form data");
         setFormData(initialValue);
         showAlert("Success", "Medicine Invoice Edited", "success");
+        fetchData();
         setShowEditModal(false);
         resetForm();
       })
@@ -244,6 +254,13 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
 
       const newItem = {
         ...item,
+        MedicineID: {
+          _id: item.MedicineID,
+          medicineName: item.medicineName,
+          HSNCode: item.HSNCode,
+          batchNumber: item.batchNumber,
+          expirationDate: item.expiryDate,
+        }, // Ensure MedicineID includes the full object with its properties
         totalAmount: Number(totalAmount),
         baseAmount: Number(baseAmount),
         gstAmount: Number(gstAmount),
@@ -326,8 +343,8 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
     }));
   };
 
-  console.log(formData, "this is the form data");
-  console.log(invoice, "this is the invoice data");
+  // console.log(formData, "this is the form data");
+  // console.log(invoice, "this is the invoice data");
 
   return (
     <div className="bg-white w-full pl-4 pr-4">
@@ -374,16 +391,6 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
                   <p>{formData?.patient?.Name}</p>
                   <p>{`${formData?.patient?.Gender}, Age: ${formData?.patient?.age}`}</p>
                   <p>{formData?.patient?.Address?.city}</p>
-                  <p>{`VisitorType: ${
-                    formData?.patient?.VisitorTypeID?.type
-                      ? formData?.patient?.VisitorTypeID?.type
-                      : "N/A"
-                  }`}</p>
-                  <p>{`PatientType: ${
-                    formData?.patient?.patientTypeID?.type
-                      ? formData?.patient?.patientTypeID?.type
-                      : "N/A"
-                  }`}</p>
                 </>
               ) : (
                 <div className="max-w-md mx-auto relative">
@@ -483,19 +490,21 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
                     taxableValue: baseAmount,
                     gstAmount,
                   } = calculateGSTAmounts(item);
+                  const medicineDetails =
+                    typeof item.MedicineID === "object" ? item.MedicineID : {};
                   return (
                     <tr
-                      key={item.MedicineID}
+                      key={item.MedicineID?._id || index}
                       className="border-b border-black text-center"
                     >
                       <td className="p-2 text-sm border-r border-black">
                         {index + 1}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
-                        {item?.MedicineID?.medicineName}
+                        {medicineDetails.medicineName}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
-                        {item?.MedicineID?.HSNCode}
+                        {medicineDetails.HSNCode}
                       </td>
                       <td className="p-2 text-sm border-r border-black">
                         {item?.quantity}
@@ -503,22 +512,21 @@ const MedicineInvoiceEditPage = ({ setRefreshList, invoice, fetchData,setShowEdi
                       <td className="p-2 text-sm border-r border-black">
                         {item?.unitPrice}
                       </td>
-                      <td className="p-2 text-sm border-r border-black ">
-                        {item?.MedicineID?.batchNumber}
+                      <td className="p-2 text-sm border-r border-black">
+                        {medicineDetails.batchNumber}
                       </td>
-                      <td className="p-2 text-sm border-r border-black ">
-                        {item?.MedicineID?.expirationDate
-                          ? moment(item.MedicineID.expirationDate).format(
+                      <td className="p-2 text-sm border-r border-black">
+                        {medicineDetails.expirationDate
+                          ? moment(medicineDetails.expirationDate).format(
                               "YYYY-MM-DD"
                             )
                           : "N/A"}
                       </td>
-
                       <td className="p-2 text-sm border-r  border-black">
                         <div className="flex">
                           <span className="border-r p-2  flex-1">
                             {item?.GST}%
-                          </span>{" "}
+                          </span>
                           <span className="border-r p-2 flex-1">
                             {item?.GST / 2}%
                           </span>

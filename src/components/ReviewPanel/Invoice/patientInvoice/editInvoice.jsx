@@ -123,7 +123,6 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
       invoice?.invoiceID;
       const data = response.data;
       console.log(data, "data");
-
       setGetData(data);
       setFormData((prev) => ({
         ...prev,
@@ -319,6 +318,8 @@ const InvoiceEditPage = ({ invoice, fetchData, setShowEditModal }) => {
       };
     });
   };
+
+  console.log(formData, "formData");
 
   return (
     <div className="bg-white px-10 py-2">

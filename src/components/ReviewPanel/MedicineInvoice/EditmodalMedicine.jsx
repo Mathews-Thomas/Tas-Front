@@ -6,6 +6,7 @@ const Medicine_Invoive_Edit_Modal = ({
   fetchData,
   setShowEditModal,
   invoice,
+  setRefresh
 }) => {
   // Function to close modal when background is clicked
   const closeModal = (e) => {
@@ -48,6 +49,7 @@ const Medicine_Invoive_Edit_Modal = ({
                   fetchData={fetchData}
                   invoice={invoice}
                   setShowEditModal={setShowEditModal}
+                  setRefresh={setRefresh}
                 />
               </div>
             </div>
