@@ -58,6 +58,7 @@ import UserAuthRoute from "./RouteHelpers/UserAuthRoute";
 import RoleBasedRoute from "./RouteHelpers/RolebasedProtectedRoute";
 import Patient_Master_List from "./Pages/ReceptionPanel/PatientList";
 import PatientProfile from "./components/ReviewPanel/Patients/PatientProfile";
+import Medicine_consolidated from "./Pages/ReviewPanel/Medicine_consolidated";
 function App() {
   return (
     <>
@@ -83,6 +84,8 @@ function App() {
           <Route path="Doctors-list/" element={<DoctorsList />} />
           <Route path="Patient-invoice-report/" element={<Patient_invoice_report />} />  
           <Route path="consolidate-report/" element={<Consolidate_Report />} /> 
+          <Route path="medicine-consolidate-report/" element={<Medicine_consolidated />} /> 
+
           <Route path="settings/" element={<USERSettings />} />
           <Route path="profile/" element={<USERProfile />} />
           <Route path="help" element={<Wraper value={"Help"} />} />
@@ -105,6 +108,7 @@ function App() {
           <Route path="Patient-Invoice-list/" element={<Patient_Invoice_List />} />
           <Route path="Patient-invoice-report/" element={<Patient_invoice_report />} />
           <Route path="consolidate-report/" element={<Consolidate_Report />} /> 
+          <Route path="medicine-consolidate-report/" element={<Medicine_consolidated />} />
           <Route path="settings/" element={<Settings />} />
           <Route path="profile/" element={<Profile />} />
           <Route path="help" element={<Wraper value={"Help"} />} />

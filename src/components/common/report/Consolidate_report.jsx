@@ -22,6 +22,7 @@ const ConsolidatedReport = () => {
       `/admin/consolidated-reports/?BranchID=${BranchID}&StartDate=${filterDate.StartDate}&EndDate=${filterDate.EndDate}`
     ).then((resp) => {
       setData(resp?.data);
+      console.log(data,"this is the  data");
       setDate(resp?.data.date);
       const transformedDoctorsCollection = transformDoctorsByBranches(
         resp?.data.DoctorsColloction,

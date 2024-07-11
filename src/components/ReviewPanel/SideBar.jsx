@@ -292,6 +292,7 @@ const MenuList = [
       { name: "Medicine Invoice", link: "medicine-invoice/" },
       { name: "Medicine Directory", link: "medicine-directory/" },
       { name: "Add Medicine", link: "add-medicine/" },
+      { name: "Consolidate report", link: "medicine-consolidate-report/" },
 
     ],
   },
