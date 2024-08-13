@@ -10,12 +10,7 @@ const Medicine_consolidated_report = () => {
   const [customStartDate, setCustomStartDate] = useState(null);
   const [customEndDate, setCustomEndDate] = useState(null);
 
-  const fetchReport = async (
-    startDate,
-    endDate,
-    setTodayData,
-    setMonthData
-  ) => {
+  const fetchReport = async (startDate, endDate) => {
     try {
       const response = await Axios.get("/admin/medicine/consolidated-report", {
         params: { startDate, endDate },
@@ -33,27 +28,37 @@ const Medicine_consolidated_report = () => {
   };
 
   const setupCustomDate = ({ StartDate, EndDate }) => {
-    fetchReport(StartDate, EndDate, setTodayData, setMonthData);
+    setCustomStartDate(StartDate);
+    setCustomEndDate(EndDate);
+    fetchReport(StartDate, EndDate);
+  };
+
+  const fetchCurrentMonthReport = () => {
+    setCustomStartDate(null);
+    setCustomEndDate(null);
+    const today = new Date();
+    const startMonth = format(startOfMonth(today), "yyyy-MM-dd");
+    const endMonth = format(endOfMonth(today), "yyyy-MM-dd");
+    fetchReport(startMonth, endMonth);
   };
 
   useEffect(() => {
-    const today = new Date();
-    const formattedDate = format(today, "yyyy-MM-dd");
-
-    const startMonth = format(startOfMonth(today), "yyyy-MM-dd");
-    const endMonth = format(endOfMonth(today), "yyyy-MM-dd");
-
-    fetchReport(startMonth, endMonth, setTodayData, setMonthData);
+    fetchCurrentMonthReport();
   }, []);
 
   const renderDateRange = () => {
     if (customStartDate && customEndDate) {
-      return `${format(new Date(customStartDate), "dd/MM/yyyy")} - ${format(new Date(customEndDate), "dd/MM/yyyy")}`;
+      return `${format(new Date(customStartDate), "dd/MM/yyyy")} - ${format(
+        new Date(customEndDate),
+        "dd/MM/yyyy"
+      )}`;
     } else {
-      return `${format(startOfMonth(new Date()), "dd/MM/yyyy")} - ${format(endOfMonth(new Date()), "dd/MM/yyyy")}`;
+      return `${format(startOfMonth(new Date()), "dd/MM/yyyy")} - ${format(
+        endOfMonth(new Date()),
+        "dd/MM/yyyy"
+      )}`;
     }
   };
-
 
   return (
     <>
@@ -137,7 +142,7 @@ const Medicine_consolidated_report = () => {
                 </tr>
               )}
               <tr>
-              <td colSpan="6" className="text-center bg-gray-300 font-bold">
+                <td colSpan="6" className="text-center bg-gray-300 font-bold">
                   MONTH - {renderDateRange()}
                 </td>
               </tr>
@@ -197,7 +202,7 @@ const Medicine_consolidated_report = () => {
               )}
             </tbody>
           </table>
-          <div className=" w-full flex justify-end items-center hover:cursor-pointer">
+          <div className="w-full flex justify-end items-center hover:cursor-pointer gap-2">
             <div className="w-fit">
               <div
                 title="Custom Date"
@@ -218,6 +223,18 @@ const Medicine_consolidated_report = () => {
                   <path d="M0 0h24v24H0V0z" fill="none" />
                   <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                 </svg>
+              </div>
+              <hr className="border-1" />
+            </div>
+            <div className="w-fit">
+              <div
+                title="Go to This Month Report"
+                className="text-xs capitalize flex gap-1 text-blue-800 py-2 pr-1 group"
+                onClick={fetchCurrentMonthReport}
+              >
+                <span className="cursor-pointer group-hover:scale-105 duration-300">
+                  Go to This Month Report
+                </span>
               </div>
               <hr className="border-1" />
             </div>
